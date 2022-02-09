@@ -5,6 +5,8 @@ from pennylane import numpy as np
 from pennylane.optimize import NesterovMomentumOptimizer
 
 n_wires = 4
+n_qubits = 4
+n_layers = 4
 
 dev = qml.device("default.qubit", wires = n_wires)
 
@@ -18,7 +20,7 @@ def layer(W):
 
     # Adds controlled NOT matrices
     for i in range(n):
-        qml.CNOT(wires = [i, i % n])
+        qml.CNOT(wires = [i, (i + 1) % n])
 
 # The state preparation for the circuit
 def statepreparation(x):
@@ -52,3 +54,4 @@ def accuracy(labels, preds):
 def cost(weights, bias, X, Y):
     preds = [variational_classifier(weights, x, bias) for x in X]
     return square_loss(Y, preds)
+
