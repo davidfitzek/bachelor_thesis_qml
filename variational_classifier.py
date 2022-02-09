@@ -23,7 +23,18 @@ def layer(W):
 # The state preparation for the circuit
 def statepreparation(x):
     qml.BasisState(x, wires = [i for i in range(n_wires)])
-    
+
+# The circuit
+@qml.qnode(dev)
+def circuit(weights, x):
+
+    statepreparation(x)
+
+    for W in weights:
+        layer(W)
+
+    return qml.expval(qml.PauliZ(0))
+
 # Labels, predictions are assumed to be of equal length
 def square_loss(labels, preds):
     loss = sum((l - p) ** 2 for l, p in zip(labels, preds))
