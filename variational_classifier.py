@@ -48,3 +48,7 @@ def accuracy(labels, preds):
     tol = 1e-5
     loss = sum((l - p) < tol for l, p in zip(labels, preds))
     return loss / len(labels)
+
+def cost(weights, bias, X, Y):
+    preds = [variational_classifier(weights, x, bias) for x in X]
+    return square_loss(Y, preds)
