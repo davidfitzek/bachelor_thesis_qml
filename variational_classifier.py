@@ -20,6 +20,10 @@ def layer(W):
     for i in range(n):
         qml.CNOT(wires = [i, i % n])
 
+# The state preparation for the circuit
+def statepreparation(x):
+    qml.BasisState(x, wires = [i for i in range(n_wires)])
+    
 # Labels, predictions are assumed to be of equal length
 def square_loss(labels, preds):
     loss = sum((l - p) ** 2 for l, p in zip(labels, preds))
