@@ -35,6 +35,9 @@ def circuit(weights, x):
 
     return qml.expval(qml.PauliZ(0))
 
+def variational_classifier(weights, x, bias):
+    return circuit(weights, x) + bias
+
 # Labels, predictions are assumed to be of equal length
 def square_loss(labels, preds):
     loss = sum((l - p) ** 2 for l, p in zip(labels, preds))
