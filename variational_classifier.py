@@ -42,6 +42,7 @@ def circuit(weights, x):
 def variational_classifier(weights, x, bias):
     return circuit(weights, x) + bias
 
+
 # Labels, predictions are assumed to be of equal length
 def square_loss(labels, preds):
     loss = sum((l - p) ** 2 for l, p in zip(labels, preds))
@@ -94,7 +95,4 @@ for i in range(20):
             i + 1, cost(weights, bias, X, Y), acc
         )
     )
-
-#Kommentar test bara
-#Kommentar test igen
 
