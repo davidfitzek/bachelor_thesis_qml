@@ -8,6 +8,7 @@ np.random.seed(123) # Set seed for reproducibility
 
 n_wires = 2
 n_qubits = n_wires
+n_layers = 6
 
 dev = qml.device("default.qubit", wires = 2)
 
@@ -69,7 +70,7 @@ def cost(weights, bias, features, labels):
 # percentile is a number between 0 and 1 indicating what percentage should be test data
 def split_data(X, Y, percentage):
     n = len(Y)
-    indexes = np.random.choice(range(n), percentage * n)
+    indexes = np.random.choice(range(n), np.int64(percentage * n))
 
     X_train = X[indexes]
     X_test = X[~indexes]
@@ -101,6 +102,43 @@ Y = data[:, -1]
 
 np.random.seed(123) # Set seed again for reproducibility
 
-X_train, X_test, Y_train, Y_test = split_data(X_normalised, Y, 70)
+# Split data into train data and test data
+features_train, features_test, Y_train, Y_test = split_data(features, Y, 0.7)
 
+n_train = len(Y_train)
+n_test = len(Y_test)
+
+print('Number of train data points : {}'.format(n_train))
+print('Number of test data points  : {}'.format(n_test))
+
+weights_init = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True)
+bias_init = np.array(0.0, requires_grad = True)
+
+opt = NesterovMomentumOptimizer(0.01)
+batch_size = 5
+
+# train the variational classifier
+weights = weights_init
+bias = bias_init
+n_steps = 60
+for i in range(n_steps):
+    
+    # Update the weights by one optimiser step
+    batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
+    features_train_batch = features_train[batch_index]
+    Y_train_batch = Y_train[batch_index]
+    weights, bias, _, _ = opt.step(cost, weights, bias, features_train_batch, Y_train_batch)
+
+    # Compute predictions on train and test set
+    predictions_train = [np.sign(variational_classifier(weights, feature, bias)) for feature in features_train]
+    predictions_test = [np.sign(variational_classifier(weights, feature, bias)) for feature in features_test]
+
+    # Compute accuracy on train and test set
+    accuracy_train = accuracy(Y_train, predictions_train)
+    accuracy_test = accuracy(Y_test, predictions_test)
+
+    print(
+        'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy test: {:0.7f} '
+        ''.format(i + 1, cost(weights, bias, features, Y), accuracy_train, accuracy_test)
+    )
 
