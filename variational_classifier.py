@@ -4,6 +4,8 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane.optimize import NesterovMomentumOptimizer
 
+import common as com
+
 np.random.seed(123) # Set seed for reproducibility
 
 n_wires = 4
@@ -42,20 +44,9 @@ def circuit(weights, x):
 def variational_classifier(weights, x, bias):
     return circuit(weights, x) + bias
 
-# Labels, predictions are assumed to be of equal length
-def square_loss(labels, preds):
-    loss = sum((l - p) ** 2 for l, p in zip(labels, preds))
-    return loss / len(labels)
-
-# Labels, predictions are assumed to be of equal length
-def accuracy(labels, preds):
-    tol = 1e-5
-    loss = sum((l - p) < tol for l, p in zip(labels, preds))
-    return loss / len(labels)
-
 def cost(weights, bias, X, Y):
     preds = [variational_classifier(weights, x, bias) for x in X]
-    return square_loss(Y, preds)
+    return com.square_loss(Y, preds)
 
 data = np.loadtxt('data/parity.txt')
 X = np.array(data[:, :-1], requires_grad = False)
@@ -87,7 +78,7 @@ for i in range(20):
 
     # Compute accuracy
     predictions = [np.sign(variational_classifier(weights, x, bias)) for x in X]
-    acc = accuracy(Y, predictions)
+    acc = com.accuracy(Y, predictions)
 
     print(
         'Iter: {:5d} | Cost: {:0.7f} | Accuracy: {:0.7f} '.format(

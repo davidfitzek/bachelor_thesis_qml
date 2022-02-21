@@ -4,6 +4,8 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane.optimize import NesterovMomentumOptimizer
 
+import common as com
+
 np.random.seed(123) # Set seed for reproducibility
 
 n_wires = 2
@@ -57,20 +59,9 @@ def circuit(weights, angles):
 def variational_classifier(weights, angles, bias):
     return circuit(weights, angles) + bias
 
-# Labels, predictions are assumed to be of equal length
-def square_loss(labels, preds):
-    loss = sum((l - p) ** 2 for l, p in zip(labels, preds))
-    return loss / len(labels)
-
 def cost(weights, bias, features, labels):
     preds = [variational_classifier(weights, feature, bias) for feature in features]
-    return square_loss(labels, preds)
-
-# Labels, predictions are assumed to be of equal length
-def accuracy(labels, preds):
-    tol = 1e-5
-    loss = sum((l - p) < tol for l, p in zip(labels, preds))
-    return loss / len(labels)
+    return com.square_loss(labels, preds)
 
 # Splits data into train and test data randomly
 # percentile is a number between 0 and 1 indicating what percentage should be test data
@@ -140,8 +131,8 @@ for i in range(n_steps):
     predictions_test = [np.sign(variational_classifier(weights, feature, bias)) for feature in features_test]
 
     # Compute accuracy on train and test set
-    accuracy_train = accuracy(Y_train, predictions_train)
-    accuracy_test = accuracy(Y_test, predictions_test)
+    accuracy_train = com.accuracy(Y_train, predictions_train)
+    accuracy_test = com.accuracy(Y_test, predictions_test)
 
     print(
         'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy test: {:0.7f} '
