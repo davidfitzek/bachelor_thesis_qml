@@ -42,7 +42,6 @@ def circuit(weights, x):
 def variational_classifier(weights, x, bias):
     return circuit(weights, x) + bias
 
-
 # Labels, predictions are assumed to be of equal length
 def square_loss(labels, preds):
     loss = sum((l - p) ** 2 for l, p in zip(labels, preds))
@@ -80,8 +79,8 @@ weights = weights_init
 bias = bias_init
 for i in range(20):
 
-    # Update the weights by one optimizer step
-    batch_index = np.random.randint(0, len(X), (batch_size, ))
+    # Update the weights by one optimiser step
+    batch_index = np.random.randint(0, high = len(X), size = (batch_size, ))
     X_batch = X[batch_index]
     Y_batch = Y[batch_index]
     weights, bias, _, _ = opt.step(cost, weights, bias, X_batch, Y_batch)
