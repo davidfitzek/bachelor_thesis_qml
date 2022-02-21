@@ -66,6 +66,12 @@ def cost(weights, bias, features, labels):
     preds = [variational_classifier(weights, feature, bias) for feature in features]
     return square_loss(labels, preds)
 
+# Labels, predictions are assumed to be of equal length
+def accuracy(labels, preds):
+    tol = 1e-5
+    loss = sum((l - p) < tol for l, p in zip(labels, preds))
+    return loss / len(labels)
+
 # Splits data into train and test data randomly
 # percentile is a number between 0 and 1 indicating what percentage should be test data
 def split_data(X, Y, percentage):
