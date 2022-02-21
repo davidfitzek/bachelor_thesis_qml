@@ -66,23 +66,23 @@ def cost(weights, bias, features, labels):
     return square_loss(labels, preds)
 
 # Load the data
-data = np.loadtxt("data/iris_classes1and2_scaled.txt")
+data = np.loadtxt('data/iris_classes1and2_scaled.txt')
 X = data[:, 0 : 2]
-print("First X sample (original)  : {}".format(X[0]))
+print('First X sample (original)'.ljust(28) + ': {}'.format(X[0]))
 
 # Pad the vectors to size 2^2 with constant values
 padding = 0.3 * np.ones((len(X), 1))
 X_pad = np.c_[np.c_[X, padding], np.zeros((len(X), 1))]
-print("First X sample (padded)    : {}".format(X_pad[0]))
+print('First X sample (padded)'.ljust(28) + ': {}'.format(X_pad[0]))
 
 # Normalise each input
 norm = np.sqrt(np.sum(X_pad ** 2, -1))
 X_normalised = (X_pad.T / norm).T
-print("First X sample (normalised): {}".format(X_normalised[0]))
+print('First X sample (normalised)'.ljust(28) + ': {}'.format(X_normalised[0]))
 
 # Angles for state preparation are new features
 features = np.array([get_angles(x) for x in X_normalised], requires_grad = False)
-print("First features sample      :", features[0])
+print('First features sample'.ljust(28) + ': {}'.format(features[0]))
 
 Y = data[:, -1]
 
