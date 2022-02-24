@@ -96,4 +96,35 @@ percentage = 0.7
 # Split data into train and validation
 X_train, X_val, Y_train, Y_val = com.split_data(X, Y, percentage)
 
+weights_init = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True)
+bias_init = np.array(0.0, requires_grad = True)
+
+opt = NesterovMomentumOptimizer(0.01)
+batch_size = 5
+
+# train the variational classifier
+weights = weights_init
+bias = bias_init
+n_steps = 60
+
+for i in range(n_steps):
+
+    # Update the weights by one optimiser step
+    batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
+    X_train_batch = X_train[batch_index]
+    Y_train_batch = Y_train[batch_index]
+    weights, bias, _, _ = opt.step(cost, weights, bias, X_train_batch, Y_train_batch)
+
+    # Compute predictions on train and test set
+    preds_train = [np.sign(variational_classifier(weights, x, bias)) for x in X_train]
+    preds_val = [np.sign(variational_classifier(weights, x, bias)) for x in X_val]
+
+    # Compute accuracy on train and test set
+    acc_train = com.accuracy(Y_train, preds_train)
+    acc_test = com.accuracy(Y_val, preds_val)
+
+    print(
+        'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy test: {:0.7f} '
+        ''.format(i + 1, cost(weights, bias, X, Y), accuracy_train, accuracy_test)
+    )
 
