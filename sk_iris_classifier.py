@@ -11,7 +11,7 @@ np.random.seed(123) # Set seed for reproducibility
 
 n_wires = 2
 n_qubits = n_wires
-n_layers = 4
+n_layers = 6
 
 dev = qml.device("default.qubit", wires = 2)
 
@@ -64,6 +64,7 @@ def cost(weights, bias, features, labels):
     preds = [variational_classifier(weights, feature, bias) for feature in features]
     return com.square_loss(labels, preds)
 
+# Load the data set
 data = load_iris()
 
 X = data['data']
@@ -81,6 +82,7 @@ Y = Y[: cutoff]
 
 # Scale and translate Y from 0 and 1 to -1 and 1
 Y = 2 * Y - 1
+Y = np.array(Y) # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
 
 # Normalise each row in X
 X_norm = np.linalg.norm(X, axis = 1).reshape(100, 1) # Because X is ndarray X_norm is a tensor 
@@ -89,18 +91,18 @@ X = X / X_norm
 # Get the angles
 X = np.array([get_angles(x) for x in X], requires_grad = False)
 
-print('Data')
+print('Data:')
 for x, y in zip(X, Y):
     print('\t' + '{}'.format(x).ljust(45) + ' : ' + '{}'.format(y).rjust(2))
 
 # Percentage of the data which should be used for training
 percentage = 0.7
+n = len(Y)
 
 # Split data into train and validation
 X_train, X_val, Y_train, Y_val = com.split_data(X, Y, percentage)
 
 n_train = len(Y_train)
-n_val = len(Y_val)
 
 weights_init = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True)
 bias_init = np.array(0.0, requires_grad = True)
@@ -131,6 +133,6 @@ for i in range(n_steps):
 
     print(
         'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy test: {:0.7f} '
-        ''.format(i + 1, cost(weights, bias, X, Y), accuracy_train, accuracy_test)
+        ''.format(i + 1, cost(weights, bias, X, Y), acc_train, acc_test)
     )
 
