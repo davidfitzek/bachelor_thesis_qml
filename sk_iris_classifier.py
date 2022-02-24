@@ -66,22 +66,25 @@ def cost(weights, bias, features, labels):
 
 data = load_iris()
 
-features = data['data']
-targets = data['target']
+X = data['data']
+Y = data['target']
 
 # We will only look at two types, -1 and 1
-# In targets, elements are of three types 0, 1, and 2.
+# In Y, elements are of three types 0, 1, and 2.
 # We simply cutoff the 2:s for now
 # The array is sorted so we can easily find first occurence of a 2 with binary search
-cutoff = np.searchsorted(targets, 2)
+cutoff = np.searchsorted(Y, 2)
 
-# Now simply remove the targets and features corresponding to the 2:s
-features = features[: cutoff]
-targets = targets[: cutoff]
+# Now simply remove the x:s and y:s corresponding to the 2:s
+X = X[: cutoff]
+Y = Y[: cutoff]
 
-# Scale and translate targets from 0 and 1 to -1 and 1
-targets = 2 * targets - 1
+# Scale and translate Y from 0 and 1 to -1 and 1
+Y = 2 * Y - 1
 
-print(features)
-print(targets)
+# Normalise each row in X
+X_norm = np.linalg.norm(X, axis = 1).reshape(100, 1) # Because X is ndarray X_norm is a tensor 
+X = X / X_norm
 
+for x, y in zip(X, Y):
+    print('{} : {}'.format(x, y))
