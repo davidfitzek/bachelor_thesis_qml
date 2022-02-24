@@ -86,5 +86,14 @@ Y = 2 * Y - 1
 X_norm = np.linalg.norm(X, axis = 1).reshape(100, 1) # Because X is ndarray X_norm is a tensor 
 X = X / X_norm
 
+print('Data')
 for x, y in zip(X, Y):
-    print('{} : {}'.format(x, y))
+    print('\t' + '{}'.format(x).ljust(45) + ' : ' + '{}'.format(y).rjust(2))
+
+# Percentage of the data which should be used for training
+percentage = 0.7
+
+# Split data into train and validation
+X_train, X_val, Y_train, Y_val = com.split_data(X, Y, percentage)
+
+
