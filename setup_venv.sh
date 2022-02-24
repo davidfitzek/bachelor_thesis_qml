@@ -11,3 +11,5 @@ pip install networkx
 pip install pennylane 
 pip install pennylane-qiskit
 pip install autograd jax jaxlib
+pip install scikit-learn
+
