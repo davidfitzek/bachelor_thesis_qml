@@ -63,19 +63,6 @@ def cost(weights, bias, features, labels):
     preds = [variational_classifier(weights, feature, bias) for feature in features]
     return com.square_loss(labels, preds)
 
-# Splits data into train and test data randomly
-# percentile is a number between 0 and 1 indicating what percentage should be test data
-def split_data(X, Y, percentage):
-    n = len(Y)
-    indexes = np.random.choice(range(n), np.int64(percentage * n))
-
-    X_train = X[indexes]
-    X_test = X[~indexes]
-    Y_train = Y[indexes]
-    Y_test = Y[~indexes]
-
-    return X_train, X_test, Y_train, Y_test
-
 # Load the data
 data = np.loadtxt('data/iris_classes1and2_scaled.txt')
 X = data[:, 0 : 2]
@@ -100,7 +87,7 @@ Y = data[:, -1]
 np.random.seed(123) # Set seed again for reproducibility
 
 # Split data into train data and test data
-features_train, features_test, Y_train, Y_test = split_data(features, Y, 0.7)
+features_train, features_test, Y_train, Y_test = com.split_data(features, Y, 0.7)
 
 n_train = len(Y_train)
 n_test = len(Y_test)
