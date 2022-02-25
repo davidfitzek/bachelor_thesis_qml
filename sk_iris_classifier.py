@@ -5,6 +5,8 @@ from pennylane import numpy as np
 from pennylane.optimize import NesterovMomentumOptimizer
 from sklearn.datasets import load_iris
 
+import json
+
 import common as com
 
 np.random.seed(123) # Set seed for reproducibility
@@ -135,4 +137,21 @@ for i in range(n_steps):
         'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy test: {:0.7f} '
         ''.format(i + 1, cost(weights, bias, X, Y), acc_train, acc_test)
     )
+
+# Dumping result to json
+doc = {
+    'weights': weights.tolist(),
+    'bias': bias.tolist(),
+    'X_train': X_train.tolist(),
+    'X_val': X_val.tolist(),
+    'Y_train': Y_train.tolist(),
+    'Y_val': Y_val.tolist()
+}
+
+filename = 'data/sk_iris_result.json'
+
+with open(filename, 'w') as f:
+    json.dump(doc, f)
+
+print('Dumped data to: {}'.format(filename))
 
