@@ -6,6 +6,7 @@ from pennylane.optimize import NesterovMomentumOptimizer
 from sklearn.datasets import load_iris
 
 import json
+import lzma
 
 import common as com
 
@@ -160,10 +161,11 @@ doc = {
     'acc_vel': acc_val.tolist()
 }
 
-filename = 'data/sk_iris_result.json'
+filename = 'data/sk_iris_result.json.xz'
+filedata = bytes(json.dumps(doc), encoding = 'utf8')
 
-with open(filename, 'w') as f:
-    json.dump(doc, f)
+with lzma.open(filename, 'w') as f:
+    f.write(filedata)
 
 print('Dumped data to: {}'.format(filename))
 
