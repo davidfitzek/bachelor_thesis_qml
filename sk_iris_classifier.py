@@ -115,9 +115,16 @@ batch_size = 5
 # train the variational classifier
 weights = weights_init
 bias = bias_init
-n_steps = 60
 
-for i in range(n_steps):
+# Number of iterations
+n_iter = 60
+
+# Save cost and accuracy in each iteration
+costs = np.zeros(n_iter)
+acc_train = np.zeros(n_iter)
+acc_val = np.zeros(n_iter)
+
+for i in range(n_iter):
 
     # Update the weights by one optimiser step
     batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
@@ -130,12 +137,14 @@ for i in range(n_steps):
     preds_val = [np.sign(variational_classifier(weights, x, bias)) for x in X_val]
 
     # Compute accuracy on train and test set
-    acc_train = com.accuracy(Y_train, preds_train)
-    acc_test = com.accuracy(Y_val, preds_val)
+    acc_train[i] = com.accuracy(Y_train, preds_train)
+    acc_val[i] = com.accuracy(Y_val, preds_val)
+
+    costs[i] = cost(weights, bias, X, Y)
 
     print(
-        'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy test: {:0.7f} '
-        ''.format(i + 1, cost(weights, bias, X, Y), acc_train, acc_test)
+        'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} '
+        ''.format(i + 1, costs[i], acc_train[i], acc_val[i])
     )
 
 # Dumping result to json
@@ -145,7 +154,10 @@ doc = {
     'X_train': X_train.tolist(),
     'X_val': X_val.tolist(),
     'Y_train': Y_train.tolist(),
-    'Y_val': Y_val.tolist()
+    'Y_val': Y_val.tolist(),
+    'costs': costs.tolist(),
+    'acc_train': acc_train.tolist(),
+    'acc_vel': acc_val.tolist()
 }
 
 filename = 'data/sk_iris_result.json'
