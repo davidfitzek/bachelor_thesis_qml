@@ -26,23 +26,26 @@ def layer(W):
     for i in range(n):
         qml.CNOT(wires = [i, (i + 1) % n])
 
-# TODO: Understand what these five angles are
+# TODO: Understand what three angles mean
 def get_angles(x):
-
-    beta_0 = 2 * np.arcsin(np.sqrt(x[1] ** 2) / np.sqrt(x[0] ** 2 + x[1] ** 2 + 1e-12))
-    beta_1 = 2 * np.arcsin(np.sqrt(x[3] ** 2) / np.sqrt(x[2] ** 2 + x[3] ** 2 + 1e-12))
-    beta_2 = 2 * np.arcsin(np.sqrt(x[2] ** 2 + x[3] ** 2) / np.sqrt(x[0] ** 2 + x[1] ** 2 + x[2] ** 2 + x[3] ** 2))
-
+    beta_0 = 2 * np.arcsin(np.linalg.norm(x[1]) / np.linalg.norm(x[: 2]))
+    beta_1 = 2 * np.arcsin(np.linalg.norm(x[3]) / np.linalg.norm(x[2 :]))
+    beta_2 = 2 * np.arcsin(np.linalg.norm(x[2 :]) / np.linalg.norm(x))
+    
     return np.array([beta_2, - beta_1 / 2, beta_1 / 2, - beta_0 / 2, beta_0 / 2])
 
 def statepreparation(angles):
 
     qml.RY(angles[0], wires = 0)
 
-    for i in range(2):
-        for j in range(2):
+    # Should be the same as n_qubits
+    n = len(angels) // 2
+
+    for i in range(n):
+        for j in range(n):
             qml.CNOT(wires = [0, 1])
             qml.RY(angles[2 * i + j + 1], wires = 1)
+
         qml.PauliX(wires = 0)
 
 # The circuit
