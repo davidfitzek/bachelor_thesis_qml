@@ -26,26 +26,20 @@ def layer(W):
     for i in range(n):
         qml.CNOT(wires = [i, (i + 1) % n])
 
-def get_angles(x):
-    beta_0 = 2 * np.arcsin(np.linalg.norm(x[1]) / np.linalg.norm(x[: 2]))
-    beta_1 = 2 * np.arcsin(np.linalg.norm(x[3]) / np.linalg.norm(x[2 :]))
-    beta_2 = 2 * np.arcsin(np.linalg.norm(x[2 :]) / np.linalg.norm(x))
-    
-    return np.array([beta_2, - beta_1 / 2, beta_1 / 2, - beta_0 / 2, beta_0 / 2])
-
 # Looking at equation 8 in https://arxiv.org/pdf/quant-ph/0407010.pdf
 # With n = number of qubits, and k = 1, 2, ..., n
-def get_angles3(x):
+def get_angles(x):
 
     # Number of qubits needed to encode x
     # Should be equal to n_qubits
+    # Should be a power of two
     n = np.int64(np.ceil(np.log2(len(x))))
 
     # Matrix for holding our angles
     beta = np.zeros(shape = (2 ** (n - 1), n))
 
     for k in range(n):
-        for j in range(2 ** (n - k) - 1):
+        for j in range(2 ** (n - k - 1)):
             # Compute the numerator inside the arcsin
             num = np.sqrt(sum(
                 np.abs(x[(2 * j + 1) * 2 ** k + l]) ** 2
@@ -57,8 +51,6 @@ def get_angles3(x):
                     for l in range(2 ** (k + 1))
             ))
             beta[j, k] = 2 * np.arcsin(num / den)
-            print(beta[j, k])
-            print(k, j)
 
     return beta
 
