@@ -4,27 +4,31 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane.optimize import NesterovMomentumOptimizer
 
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+
 import common as com
 
 np.random.seed(123) # Set seed for reproducibility
 
-n_wires = 2
-n_qubits = n_wires
-n_layers = 6
+# Collect this in a class
+class Data:
 
-dev = qml.device("default.qubit", wires = 2)
+	def __init__(self, X, Y):
+		self.X = X
+		self.Y = Y
 
 # The layer for the circuit
-def layer(W):
-    n = len(W)
+def layer_ex(weights):
+	n = len(weights)
 
-    # Adds rotation matrices
-    for i, row in enumerate(W):
-        qml.Rot(row[0], row[1], row[2], wires = i)
+	# Adds rotation matrices
+	for i, row in enumerate(weights):
+		qml.Rot(row[0], row[1], row[2], wires = i)
 
-    # Adds controlled NOT matrices
-    for i in range(n):
-        qml.CNOT(wires = [i, (i + 1) % n])
+	# Adds controlled NOT matrices
+	for i in range(n):
+		qml.CNOT(wires = [i, (i + 1) % n])
 
 # Looking at equation 8 in https://arxiv.org/pdf/quant-ph/0407010.pdf
 # With n = number of qubits, and k = 1, 2, ..., n
@@ -60,99 +64,158 @@ def get_angles(x):
         -beta[0, 0] / 2,
         beta[0, 0] / 2
     ])
+ 
+def stateprep_ex(angles):
 
-def statepreparation(angles):
+	qml.RY(angles[0], wires = 0)
 
-    qml.RY(angles[0], wires = 0)
+	# Should be the same as n_qubits
+	n = len(angles) // 2
 
-    # Should be the same as n_qubits
-    n = len(angles) // 2
+	for i in range(n):
+		for j in range(n):
+			qml.CNOT(wires = [0, 1])
+			qml.RY(angles[2 * i + j + 1], wires = 1)
 
-    for i in range(n):
-        for j in range(n):
-            qml.CNOT(wires = [0, 1])
-            qml.RY(angles[2 * i + j + 1], wires = 1)
+		qml.PauliX(wires = 0)
 
-        qml.PauliX(wires = 0)
+# The circuit function, allows variable statepreparation and layer functions
+def circuit_fun(weights, features, stateprep_fun, layer_fun):
 
-# The circuit
-@qml.qnode(dev)
-def circuit(weights, angles):
+	stateprep_fun(features)
 
-    statepreparation(angles)
+	for weight in weights:
+		layer_fun(weight)
 
-    for W in weights:
-        layer(W)
+	return qml.expval(qml.PauliZ(0))
 
-    return qml.expval(qml.PauliZ(0))
+def variational_classifier_fun(weights, features, bias, circuit_fun):
+	return circuit_fun(weights, features) + bias
 
-def variational_classifier(weights, angles, bias):
-    return circuit(weights, angles) + bias
+def cost_fun(weights, bias, features, labels, variational_classifier_fun):
+	preds = [variational_classifier_fun(weights, feature, bias) for feature in features]
+	return com.square_loss(labels, preds)
 
-def cost(weights, bias, features, labels):
-    preds = [variational_classifier(weights, feature, bias) for feature in features]
-    return com.square_loss(labels, preds)
+def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
+	opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
+	# opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
+	batch_size = 5 # This might be something which can be adjusted
+	
+	# Variational classifier function used by pennylane
+	def variational_classifier(weights, features, bias):
+		return variational_classifier_fun(weights, features, bias, circuit)
 
-def optimise(n_iter, X_train, X_val, Y_train, Y_val):
+	# Cost function used by pennylane
+	def cost(weights, bias, features, labels):
+		return cost_fun(weights, bias, features, labels, variational_classifier)
 
-    n_train = len(Y_train)
+	# Number of training points, used when choosing batch indexes
+	n_train = len(data_train.Y)
 
-    weights_init = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True)
-    bias_init = np.array(0.0, requires_grad = True)
+	for i in range(n_iter):
 
-    opt = NesterovMomentumOptimizer(0.01)
-    batch_size = 5
+		# Update the weights by one optimiser step
+		batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
+		X_train_batch = data_train.X[batch_index]
+		Y_train_batch = data_train.Y[batch_index]
+		weights, bias, _, _ = opt.step(cost, weights, bias, X_train_batch, Y_train_batch)
 
-    # train the variational classifier
-    weights = weights_init
-    bias = bias_init
+		# Compute predictions on train and test set
+		predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
+		predictions_val = [np.sign(variational_classifier(weights, x, bias)) for x in data_val.X]
 
-    for i in range(n_iter):
-    
-        # Update the weights by one optimiser step
-        batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
-        X_train_batch = X_train[batch_index]
-        Y_train_batch = Y_train[batch_index]
-        weights, bias, _, _ = opt.step(cost, weights, bias, X_train_batch, Y_train_batch)
+		# Compute accuracy on train and test set
+		accuracy_train = com.accuracy(data_train.Y, predictions_train)
+		accuracy_val = com.accuracy(data_val.Y, predictions_val)
 
-        # Compute predictions on train and test set
-        predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in X_train]
-        predictions_val = [np.sign(variational_classifier(weights, x, bias)) for x in X_val]
+		print(
+			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} '
+			''.format(i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
+		)
 
-        # Compute accuracy on train and test set
-        accuracy_train = com.accuracy(Y_train, predictions_train)
-        accuracy_val = com.accuracy(Y_val, predictions_val)
+# Split a data object into training and validation data
+# p is the proportion of the data which should be used for training
+def split_data(data, p):
 
-        print(
-            'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} '
-            ''.format(i + 1, cost(weights, bias, features, Y), accuracy_train, accuracy_val)
-        )
+	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
 
-# Load the data
-data = np.loadtxt('data/iris_classes1and2_scaled.txt')
-X = data[:, 0 : 2]
-#print('First X sample (original)'.ljust(28) + ': {}'.format(X[0]))
+	return Data(X_train, Y_train), Data(X_val, Y_val)
 
-# Pad the vectors to size 2^2 with constant values
-padding = 0.3 * np.ones((len(X), 1))
-X_pad = np.c_[np.c_[X, padding], np.zeros((len(X), 1))]
-#print('First X sample (padded)'.ljust(28) + ': {}'.format(X_pad[0]))
+def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun):
 
-# Normalise each input
-norm = np.linalg.norm(X_pad)
-X_normalised = (X_pad.T / norm).T
-#print('First X sample (normalised)'.ljust(28) + ': {}'.format(X_normalised[0]))
+	# The device and qnode used by pennylane
+	device = qml.device("default.qubit", wires = n_qubits)
 
-# Angles for state preparation are new features
-features = np.array([get_angles(x) for x in X_normalised], requires_grad = False)
-#print('First features sample'.ljust(28) + ': {}'.format(features[0]))
+	# Circuit function used by pennylane
+	@qml.qnode(device)
+	def circuit(weights, x):
+		return circuit_fun(weights, x, stateprep_fun, layer_fun)
 
-Y = data[:, -1]
+	# The proportion of the data which should be use for training
+	p = 0.7
 
-np.random.seed(123) # Set seed again for reproducibility
+	data_train, data_val = split_data(data, p)
 
-# Split data into train data and test data
-features_train, features_val, Y_train, Y_val = com.split_data(features, Y, 0.7)
+	n_iter = 60 # Number of iterations, should be changed to a tolerance based process instead
 
-# Optimise the weights
-optimise(60, features_train, features_val, Y_train, Y_val)
+	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
+	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
+
+	optimise(n_iter, weights, bias, data, data_train, data_val, circuit)
+
+# Load the iris data set from sklearn into a data object
+def load_data():
+
+	# Load the data set
+    data = load_iris()
+
+    X = data['data']
+    Y = data['target']
+
+    # We will only look at two types, -1 and 1
+    # In Y, elements are of three types 0, 1, and 2.
+    # We simply cutoff the 2:s for now
+    # The array is sorted so we can easily find first occurence of a 2 with binary search
+    cutoff = np.searchsorted(Y, 2)
+
+    # Now simply remove the x:s and y:s corresponding to the 2:s
+    X = X[: cutoff]
+    Y = Y[: cutoff]
+
+    # Scale and translate Y from 0 and 1 to -1 and 1
+    Y = 2 * Y - 1
+    Y = np.array(Y) # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
+
+    # Normalise each row in X
+    X_norm = np.linalg.norm(X, axis = 1).reshape(100, 1) # Because X is ndarray X_norm is a tensor 
+    X = X / X_norm
+
+    # Get the angles
+    X = np.array([get_angles(x) for x in X], requires_grad = False)
+
+    return Data(X, Y)
+
+def main():
+
+	n_qubits = 2
+	n_layers = 6
+
+	# Can be any function that takes an input vector and encodes it
+	stateprep_fun = stateprep_ex
+
+	# Can be any function which takes in a matrix of weights and returns a expected value of the layer
+	layer_fun = layer_ex
+
+	# Load the iris data
+	data = load_data()
+
+	run_variational_classifier(
+		n_qubits,
+		n_layers,
+		data,
+		stateprep_fun,
+		layer_fun
+	)
+
+if __name__ == '__main__':
+	main()
