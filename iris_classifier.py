@@ -19,7 +19,7 @@ class Data:
 		self.Y = Y
 
 # The layer for the circuit
-def layer_ex(weights):
+def layer_ex1(weights):
 	n = len(weights)
 
 	# Adds rotation matrices
@@ -29,6 +29,14 @@ def layer_ex(weights):
 	# Adds controlled NOT matrices
 	for i in range(n):
 		qml.CNOT(wires = [i, (i + 1) % n])
+
+def layer_ex2(weights):
+    n = len(weights)
+
+    # Adds rotation matrices and controlled NOT matrices
+    for i, row in enumerate(weights):
+        qml.Rot(row[0], row[1], row[2], wires = i)
+        qml.CNOT(wires = [i, (i + 1) % n])
 
 # Looking at equation 8 in https://arxiv.org/pdf/quant-ph/0407010.pdf
 # With n = number of qubits, and k = 1, 2, ..., n
@@ -204,7 +212,7 @@ def main():
 	stateprep_fun = stateprep_ex
 
 	# Can be any function which takes in a matrix of weights and returns a expected value of the layer
-	layer_fun = layer_ex
+	layer_fun = layer_ex2
 
 	# Load the iris data
 	data = load_data()
