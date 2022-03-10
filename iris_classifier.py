@@ -211,8 +211,8 @@ def main():
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_ex
 
-	# Can be any function which takes in a matrix of weights and returns a expected value of the layer
-	layer_fun = layer_ex2
+	# Can be any function which takes in a matrix of weights and creates a layer
+	layer_fun = layer_ex1
 
 	# Load the iris data
 	data = load_data()
