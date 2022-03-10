@@ -2,7 +2,7 @@
 
 import pennylane as qml
 from pennylane import numpy as np
-from pennylane.optimize import NesterovMomentumOptimizer
+from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer
 
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
@@ -61,7 +61,7 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 
 def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 	opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
-	# opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
+	#opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	batch_size = 5 # This might be something which can be adjusted
 	
 	# Variational classifier function used by pennylane
