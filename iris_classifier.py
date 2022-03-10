@@ -87,6 +87,10 @@ def stateprep_ex(angles):
 
 		qml.PauliX(wires = 0)
 
+def stateprep_amplitude(features):
+    wires = np.int64(np.ceil(np.log2(len(features))))
+    qml.AmplitudeEmbedding(features = features, wires = range(wires), normalize = True)
+
 # The circuit function, allows variable statepreparation and layer functions
 def circuit_fun(weights, features, stateprep_fun, layer_fun):
 
@@ -198,8 +202,8 @@ def load_data():
     X_norm = np.linalg.norm(X, axis = 1).reshape(100, 1) # Because X is ndarray X_norm is a tensor 
     X = X / X_norm
 
-    # Get the angles
-    X = np.array([get_angles(x) for x in X], requires_grad = False)
+    # Get the angle
+    #X = np.array([get_angles(x) for x in X], requires_grad = False)
 
     return Data(X, Y)
 
@@ -209,7 +213,7 @@ def main():
 	n_layers = 6
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_fun = stateprep_ex
+	stateprep_fun = stateprep_amplitude
 
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
