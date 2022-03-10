@@ -198,13 +198,6 @@ def load_data():
     Y = 2 * Y - 1
     Y = np.array(Y) # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
 
-    # Normalise each row in X
-    X_norm = np.linalg.norm(X, axis = 1).reshape(100, 1) # Because X is ndarray X_norm is a tensor 
-    X = X / X_norm
-
-    # Get the angle
-    #X = np.array([get_angles(x) for x in X], requires_grad = False)
-
     return Data(X, Y)
 
 def main():
