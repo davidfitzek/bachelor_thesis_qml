@@ -119,7 +119,7 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 
 	data_train, data_val = split_data(data, p)
 
-	n_iter = 60 # Number of iterations, should be changed to a tolerance based process instead
+	n_iter = 100 # Number of iterations, should be changed to a tolerance based process instead
 
 	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
 	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
@@ -176,7 +176,7 @@ def load_data_cancer():
 
 def main():
 
-	n_qubits = 6
+	n_qubits = 2
 	n_layers = 6
 
 	# Can be any function that takes an input vector and encodes it
@@ -186,7 +186,7 @@ def main():
 	layer_fun = layer_ex1
 
 	# Load the iris data
-	data = load_data_cancer()
+	data = load_data_iris()
 
 	run_variational_classifier(
 		n_qubits,
