@@ -147,7 +147,10 @@ def load_data():
 
     # Scale and translate Y from 0 and 1 to -1 and 1
     Y = 2 * Y - 1
-    Y = np.array(Y) # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
+
+    # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
+    Y = np.array(Y)
+    X = np.array([np.array(x) for x in X], requires_grad = False)
 
     return Data(X, Y)
 
