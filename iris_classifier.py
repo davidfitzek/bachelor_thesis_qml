@@ -4,7 +4,7 @@ import pennylane as qml
 from pennylane import numpy as np
 from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer
 
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, load_breast_cancer
 from sklearn.model_selection import train_test_split
 
 import common as com
@@ -40,7 +40,8 @@ def layer_ex2(weights):
 
 def stateprep_amplitude(features):
     wires = np.int64(np.ceil(np.log2(len(features))))
-    qml.AmplitudeEmbedding(features = features, wires = range(wires), normalize = True)
+    # Normalise the features here and also pad it to have the length of a power of two
+    qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
 
 # The circuit function, allows variable statepreparation and layer functions
 def circuit_fun(weights, features, stateprep_fun, layer_fun):
@@ -60,8 +61,8 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	return com.square_loss(labels, preds)
 
 def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
-	opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
-	#opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
+	#opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
+	opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	batch_size = 5 # This might be something which can be adjusted
 	
 	# Variational classifier function used by pennylane
@@ -82,7 +83,6 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		X_train_batch = data_train.X[batch_index]
 		Y_train_batch = data_train.Y[batch_index]
 		weights, bias, _, _ = opt.step(cost, weights, bias, X_train_batch, Y_train_batch)
-
 		# Compute predictions on train and test set
 		predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
 		predictions_val = [np.sign(variational_classifier(weights, x, bias)) for x in data_val.X]
@@ -127,36 +127,56 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 	optimise(n_iter, weights, bias, data, data_train, data_val, circuit)
 
 # Load the iris data set from sklearn into a data object
-def load_data():
+def load_data_iris():
 
 	# Load the data set
-    data = load_iris()
+	data = load_iris()
 
-    X = data['data']
-    Y = data['target']
+	X = data['data']
+	Y = data['target']
 
-    # We will only look at two types, -1 and 1
-    # In Y, elements are of three types 0, 1, and 2.
-    # We simply cutoff the 2:s for now
-    # The array is sorted so we can easily find first occurence of a 2 with binary search
-    cutoff = np.searchsorted(Y, 2)
+	# We will only look at two types, -1 and 1
+	# In Y, elements are of three types 0, 1, and 2.
+	# We simply cutoff the 2:s for now
+	# The array is sorted so we can easily find first occurence of a 2 with binary search
+	cutoff = np.searchsorted(Y, 2)
 
-    # Now simply remove the x:s and y:s corresponding to the 2:s
-    X = X[: cutoff]
-    Y = Y[: cutoff]
+	# Now simply remove the x:s and y:s corresponding to the 2:s
+	X = X[: cutoff]
+	Y = Y[: cutoff]
 
-    # Scale and translate Y from 0 and 1 to -1 and 1
-    Y = 2 * Y - 1
+	# Scale and translate Y from 0 and 1 to -1 and 1
+	Y = 2 * Y - 1
+	Y = np.array(Y) # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
 
-    # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
-    Y = np.array(Y)
-    X = np.array([np.array(x) for x in X], requires_grad = False)
+	# PennyLane numpy differ from normal numpy.
+	# Converts np.ndarray to pennylane.np.tensor.tensor
+	Y = np.array(Y)
+	X = np.array([np.array(x) for x in X], requires_grad = False)
 
-    return Data(X, Y)
+	return Data(X, Y)
+
+def load_data_cancer():
+
+	# Load the data set
+	data = load_breast_cancer()
+
+	X = data['data']
+	Y = data['target']
+
+	# Scale and translate Y from 0 and 1 to -1 and 1
+	Y = 2 * Y - 1
+
+	# PennyLane numpy differ from normal numpy.
+	# Converts np.ndarray to pennylane.np.tensor.tensor
+	Y = np.array(Y)
+	X = np.array([np.array(x) for x in X], requires_grad = False)
+
+	return Data(X, Y)
 
 def main():
 
-	n_qubits = 2
+	n_qubits = 6
 	n_layers = 6
 
 	# Can be any function that takes an input vector and encodes it
@@ -166,7 +186,7 @@ def main():
 	layer_fun = layer_ex1
 
 	# Load the iris data
-	data = load_data()
+	data = load_data_cancer()
 
 	run_variational_classifier(
 		n_qubits,
