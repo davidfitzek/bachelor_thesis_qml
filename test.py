@@ -99,3 +99,5 @@ for it in range(25):
             it + 1, cost(weights, bias, X, Y), acc
         )
     )
+
+    #Test
