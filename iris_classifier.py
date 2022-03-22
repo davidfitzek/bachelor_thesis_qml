@@ -125,7 +125,7 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
 	optimise(n_iter, weights, bias, data, data_train, data_val, circuit)
-
+#hej
 # Load the iris data set from sklearn into a data object
 def load_data_iris():
 
