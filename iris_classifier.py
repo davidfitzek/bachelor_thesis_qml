@@ -2,12 +2,14 @@
 
 import pennylane as qml
 from pennylane import numpy as np
-from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer
+from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer, GradientDescentOptimizer
 
 from sklearn.datasets import load_iris, load_breast_cancer
 from sklearn.model_selection import train_test_split
 
 import common as com
+
+import json
 
 np.random.seed(123) # Set seed for reproducibility
 
@@ -31,17 +33,17 @@ def layer_ex1(weights):
 		qml.CNOT(wires = [i, (i + 1) % n])
 
 def layer_ex2(weights):
-    n = len(weights)
+	n = len(weights)
 
-    # Adds rotation matrices and controlled NOT matrices
-    for i, row in enumerate(weights):
-        qml.Rot(row[0], row[1], row[2], wires = i)
-        qml.CNOT(wires = [i, (i + 1) % n])
+	# Adds rotation matrices and controlled NOT matrices
+	for i, row in enumerate(weights):
+		qml.Rot(row[0], row[1], row[2], wires = i)
+		qml.CNOT(wires = [i, (i + 1) % n])
 
 def stateprep_amplitude(features):
-    wires = np.int64(np.ceil(np.log2(len(features))))
-    # Normalise the features here and also pad it to have the length of a power of two
-    qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
+	wires = np.int64(np.ceil(np.log2(len(features))))
+	# Normalise the features here and also pad it to have the length of a power of two
+	qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
 
 # The circuit function, allows variable statepreparation and layer functions
 def circuit_fun(weights, features, stateprep_fun, layer_fun):
@@ -63,8 +65,13 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 	#opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
+	#opt = GradientDescentOptimizer(stepsize = 0.01)
 	batch_size = 5 # This might be something which can be adjusted
-	
+
+	costs = []
+	acc_train = []
+	acc_val = []
+
 	# Variational classifier function used by pennylane
 	def variational_classifier(weights, features, bias):
 		return variational_classifier_fun(weights, features, bias, circuit)
@@ -91,10 +98,25 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		accuracy_train = com.accuracy(data_train.Y, predictions_train)
 		accuracy_val = com.accuracy(data_val.Y, predictions_val)
 
+		cost_ = cost(weights, bias, data.X, data.Y)
+
 		print(
 			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} '
-			''.format(i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
+			''.format(i + 1, cost_, accuracy_train, accuracy_val)
 		)
+
+		costs.append(float(cost_))
+		acc_train.append(float(accuracy_train))
+		acc_val.append(float(accuracy_val))
+
+	doc = {
+		'costs': costs,
+		'acc_train': acc_train,
+		'acc_val': acc_val
+	}
+
+	with open('data/test.json', 'w') as f:
+		json.dump(doc, f)
 
 # Split a data object into training and validation data
 # p is the proportion of the data which should be used for training
@@ -119,7 +141,7 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 
 	data_train, data_val = split_data(data, p)
 
-	n_iter = 100 # Number of iterations, should be changed to a tolerance based process instead
+	n_iter = 200 # Number of iterations, should be changed to a tolerance based process instead
 
 	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
 	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
