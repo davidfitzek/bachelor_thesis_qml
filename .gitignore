@@ -130,4 +130,7 @@ dmypy.json
 
 # Data sets
 data/*.txt
-data/*.xz
+data/*.json
+
+# Figures
+figs/*.pdf
