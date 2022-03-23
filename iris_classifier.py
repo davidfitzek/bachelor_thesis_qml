@@ -1,4 +1,5 @@
 # iris_classifier.py
+import statistics 
 
 import pennylane as qml
 from pennylane import numpy as np
@@ -6,6 +7,8 @@ from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer
 
 from sklearn.datasets import load_iris, load_breast_cancer
 from sklearn.model_selection import train_test_split
+from sympy import true
+
 
 import common as com
 
@@ -60,7 +63,7 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	preds = [variational_classifier_fun(weights, feature, bias) for feature in features]
 	return com.square_loss(labels, preds)
 
-def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
+def optimise(n_iter, weights, bias, data, data_train, data_val, circuit,cross_iter):
 	#opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	batch_size = 5 # This might be something which can be adjusted
@@ -92,9 +95,11 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		accuracy_val = com.accuracy(data_val.Y, predictions_val)
 
 		print(
-			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} '
-			''.format(i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
+			'Cross validation iteration: {:5d} | Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f}'
+			''.format(cross_iter, i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
 		)
+	#returns a final accuracy	
+	return accuracy_val
 
 # Split a data object into training and validation data
 # p is the proportion of the data which should be used for training
@@ -104,28 +109,26 @@ def split_data(data, p):
 
 	return Data(X_train, Y_train), Data(X_val, Y_val)
 
-def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun):
+def run_variational_classifier(n_iter,n_qubits, n_layers, data, stateprep_fun, layer_fun, p, cross_iter):
 
-	# The device and qnode used by pennylane
-	device = qml.device("default.qubit", wires = n_qubits)
+		device = qml.device("default.qubit", wires = n_qubits)
+		
+		# Circuit function used by pennylane
+		@qml.qnode(device)
+		def circuit(weights, x):
+			return circuit_fun(weights, x, stateprep_fun, layer_fun)
+		
 
-	# Circuit function used by pennylane
-	@qml.qnode(device)
-	def circuit(weights, x):
-		return circuit_fun(weights, x, stateprep_fun, layer_fun)
+		data_train, data_val = split_data(data, p)
+		
+		weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
+		bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
-	# The proportion of the data which should be use for training
-	p = 0.7
+		res=optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_iter)
+		return res
+	
+		
 
-	data_train, data_val = split_data(data, p)
-
-	n_iter = 100 # Number of iterations, should be changed to a tolerance based process instead
-
-	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
-	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
-
-	optimise(n_iter, weights, bias, data, data_train, data_val, circuit)
-#hej
 # Load the iris data set from sklearn into a data object
 def load_data_iris():
 
@@ -175,9 +178,12 @@ def load_data_cancer():
 	return Data(X, Y)
 
 def main():
-
+	n_iter = 4 # Number of iterations, should be changed to a tolerance based process instead
 	n_qubits = 2
 	n_layers = 6
+
+	# Load the iris data
+	data = load_data_iris()
 
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_amplitude
@@ -185,16 +191,23 @@ def main():
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
-	# Load the iris data
-	data = load_data_iris()
+	cross_fold=4 # The ammount of parts the data is divided into, =1 gives no cross validation
+	p = 0.7 # The proportion of the data which should be use for training
 
-	run_variational_classifier(
+	# Note that total ammount of iterations is n_iter*cross_fold
+	for cross_iter in range(cross_fold):
+		res=run_variational_classifier( #Tried to use res to calculate a final mean and stdrd deviation, but can't get it to work
+		n_iter,
 		n_qubits,
 		n_layers,
 		data,
 		stateprep_fun,
-		layer_fun
-	)
+		layer_fun,
+		p,
+		cross_iter+1
+		)
+	
+	#print('Final Accuracy: {:0.7f}'.format(res))
 
 if __name__ == '__main__':
 	main()
