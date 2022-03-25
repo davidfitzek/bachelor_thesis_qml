@@ -1,3 +1,4 @@
+from distutils.util import execute
 from hmac import trans_36
 from unicodedata import digit
 from sklearn import datasets
@@ -9,12 +10,10 @@ from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import numpy as np
 from qiskit.circuit.library import *
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, Aer, execute
 from qiskit.tools.visualization import circuit_drawer
 from urllib3 import encode_multipart_formdata
 from qiskit_machine_learning.kernels import QuantumKernel
-
-
 
 digits = datasets.load_digits(n_class=2)
 iris = datasets.load_iris()
@@ -44,8 +43,19 @@ sample_train = minmax_scale.transform(sample_train)
 sample_test = minmax_scale.transform(sample_test)
 
 zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)
-zz_kernel = QuantumKernel()
+zz_kernel = QuantumKernel(feature_map=zz_map, quantum_instance=Aer.get_backend('statevector_simulator'))
+zz_circuit = zz_kernel.construct_circuit(sample_train[0], sample_train[1])
+#print(zz_circuit)
 
+backend = Aer.get_backend('qasm_simulator')
+job = execute(zz_circuit, backend, shots = 8192, seed_simulator=1024, seed_transpiler=1024)
+counts = job.result().get_counts(zz_circuit)
 
+matrix_train = zz_kernel.evaluate(x_vec=sample_train)
+matrix_test = zz_kernel.evaluate(x_vec=sample_test, y_vec=sample_train)
 
+zzpc_svc = SVC(kernel='precomputed')
+zzpc_svc.fit(matrix_train, label_train)
+zzpc_score = zzpc_svc.score(matrix_test, label_test)
 
+print(zzpc_score)
