@@ -8,7 +8,13 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler, minmax_scale
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import numpy as np
-from qiskit.circuit.library import ZZFeatureMap
+from qiskit.circuit.library import *
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
+from qiskit.tools.visualization import circuit_drawer
+from urllib3 import encode_multipart_formdata
+from qiskit_machine_learning.kernels import QuantumKernel
+
+
 
 digits = datasets.load_digits(n_class=2)
 iris = datasets.load_iris()
@@ -37,5 +43,9 @@ minmax_scale = MinMaxScaler((-1, 1)).fit(samples)
 sample_train = minmax_scale.transform(sample_train)
 sample_test = minmax_scale.transform(sample_test)
 
-map_zz = ZZFeatureMap(feature_dimension=3, reps = 1)
-map_zz.draw('mpl')
+zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)
+zz_kernel = QuantumKernel()
+
+
+
+
