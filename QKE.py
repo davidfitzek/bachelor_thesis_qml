@@ -18,12 +18,16 @@ from qiskit_machine_learning.kernels import QuantumKernel
 digits = datasets.load_digits(n_class=2)
 iris = datasets.load_iris()
 
+X = iris.data#[:100]
+Y = iris.target#[:100]
+
+x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=10)
 
 # Data manipulation for the digits dataset
 
 # Split the dataset
 sample_train, sample_test, label_train, label_test = train_test_split(
-    digits.data, digits.target, test_size=0.2, random_state=22)
+    digits.data, digits.target, test_size=0.2, random_state=25)
 
 # Reduce dimensions
 n_dim = 4
@@ -44,18 +48,18 @@ sample_test = minmax_scale.transform(sample_test)
 
 zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)
 zz_kernel = QuantumKernel(feature_map=zz_map, quantum_instance=Aer.get_backend('statevector_simulator'))
-zz_circuit = zz_kernel.construct_circuit(sample_train[0], sample_train[1])
+zz_circuit = zz_kernel.construct_circuit(x_train[0], x_train[1])
 #print(zz_circuit)
 
 backend = Aer.get_backend('qasm_simulator')
 job = execute(zz_circuit, backend, shots = 8192, seed_simulator=1024, seed_transpiler=1024)
 counts = job.result().get_counts(zz_circuit)
 
-matrix_train = zz_kernel.evaluate(x_vec=sample_train)
-matrix_test = zz_kernel.evaluate(x_vec=sample_test, y_vec=sample_train)
+matrix_train = zz_kernel.evaluate(x_vec=x_train)
+matrix_test = zz_kernel.evaluate(x_vec=x_test, y_vec=x_train)
 
 zzpc_svc = SVC(kernel='precomputed')
-zzpc_svc.fit(matrix_train, label_train)
-zzpc_score = zzpc_svc.score(matrix_test, label_test)
+zzpc_svc.fit(matrix_train, y_train)
+zzpc_score = zzpc_svc.score(matrix_test, y_test)
 
 print(zzpc_score)
