@@ -8,6 +8,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler, minmax_scale
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import numpy as np
+from qiskit.circuit.library import ZZFeatureMap
 
 digits = datasets.load_digits(n_class=2)
 iris = datasets.load_iris()
@@ -36,3 +37,5 @@ minmax_scale = MinMaxScaler((-1, 1)).fit(samples)
 sample_train = minmax_scale.transform(sample_train)
 sample_test = minmax_scale.transform(sample_test)
 
+map_zz = ZZFeatureMap(feature_dimension=3, reps = 1)
+map_zz.draw('mpl')
