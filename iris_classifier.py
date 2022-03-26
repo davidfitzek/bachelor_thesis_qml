@@ -64,7 +64,7 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	preds = [variational_classifier_fun(weights, feature, bias) for feature in features]
 	return com.square_loss(labels, preds)
 
-def optimise(accuracy_stop, cost_stop, weights, bias, data, data_train, data_val, circuit, n_layers):
+def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers):
 	#opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	batch_size = 5 # This might be something which can be adjusted
@@ -81,9 +81,9 @@ def optimise(accuracy_stop, cost_stop, weights, bias, data, data_train, data_val
 	n_train = len(data_train.Y)
 
 	accuracy_val = 0.0
-	cost_var = 100
+	cost_var = 100 #just something big
 	i = 0
-	while (accuracy_val < accuracy_stop) or (cost_var > cost_stop):
+	while i < iter_stop and ((accuracy_val < accuracy_stop) or (cost_var > cost_stop)):
 		# Update the weights by one optimiser step
 		batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
 		X_train_batch = data_train.X[batch_index]
@@ -115,7 +115,7 @@ def split_data(data, p):
 
 	return Data(X_train, Y_train), Data(X_val, Y_val)
 
-def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop):
+def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop):
 
 	# The device and qnode used by pennylane
 	device = qml.device("default.qubit", wires = n_qubits)
@@ -133,7 +133,7 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
 	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
-	return optimise(accuracy_stop, cost_stop, weights, bias, data, data_train, data_val, circuit, n_layers)
+	return optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers)
 
 # Load the iris data set from sklearn into a data object
 def load_data_iris():
@@ -187,11 +187,12 @@ def main():
 
 	n_qubits = 2
 	#it will test all the number of layers up to this number
-	range_layers = 15
+	range_layers = 25
 
-	# if the accuracy validation is higher and the cost is lower the iterations stop
-	accuracy_stop = 0.95
+	# if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
+	accuracy_stop = 0.99
 	cost_stop = 0.7
+	iter_stop = 250
 
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_amplitude
@@ -210,7 +211,7 @@ def main():
 		n_layers = i + 1
 		print("Starting with layer " + str(n_layers) + " of " + str(range_layers))
 		tic = time.perf_counter()
-		[iterations[i], cost[i]] = run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop)
+		[iterations[i], cost[i]] = run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop)
 		toc = time.perf_counter()
 		sec[i] = toc - tic
 
