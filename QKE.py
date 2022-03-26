@@ -13,43 +13,48 @@ from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import numpy as np
 from qiskit.circuit.library import *
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, Aer, execute
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, Aer, BasicAer, execute
 from qiskit.tools.visualization import circuit_drawer
 from urllib3 import encode_multipart_formdata
 from qiskit_machine_learning.kernels import QuantumKernel
+from qiskit_machine_learning.datasets import ad_hoc_data
 from QKE_functions import *
 
 # Data import and manipulation
 
+# Ad_hoc dataset
+adhoc_dimension = 2
+adhoc_sample_train, adhoc_sample_test, adhoc_label_train, adhoc_label_test, adhoc_total = ad_hoc_data(
+    training_size=20,
+    test_size=5,
+    n=adhoc_dimension,
+    gap=0.3,
+    plot_data=False,
+    one_hot=False,
+    include_sample_total=True,
+)
+
+# Forest dataset
 forest = datasets.fetch_covtype()
 forest_sample_train, forest_sample_test, forest_label_train, forest_label_test = train_test_split(
     forest.data, forest.target, test_size=0.3, random_state=22)
-
 [forest_sample_train, forest_sample_test] = reduceClassDimensions(4, forest_sample_train, forest_sample_test)
 
 # Iris dataset
 iris = datasets.load_iris()
-
-# Split the dataset
 iris_sample_train, iris_sample_test, iris_label_train, iris_label_test = train_test_split(
     iris.data, iris.target, test_size=0.3, random_state=22)
 
 # Breastcancer dataset
 breast = datasets.load_breast_cancer()
-
-# Split the dataset
 breast_sample_train, breast_sample_test, breast_label_train, breast_label_test = train_test_split(
     breast.data, breast.target, test_size=0.3, random_state=22)
-
 [breast_sample_train, breast_sample_test] = reduceClassDimensions(4, breast_sample_train, breast_sample_test)
 
 # Digits dataset
 digits = datasets.load_digits(n_class=2)
-
-# Split the dataset
 digits_sample_train, digits_sample_test, digits_label_train, digits_label_test = train_test_split(
     digits.data, digits.target, test_size=0.2, random_state=22)
-
 [digits_sample_train, digits_sample_test] = reduceClassDimensions(4, digits_sample_train, digits_sample_test)
 
 # Choose your set to use the QKE
