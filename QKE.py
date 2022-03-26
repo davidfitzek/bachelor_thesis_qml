@@ -36,8 +36,25 @@ adhoc_sample_train, adhoc_sample_test, adhoc_label_train, adhoc_label_test, adho
 
 # Forest dataset
 forest = datasets.fetch_covtype()
+
+X_raw = forest.data
+Y_raw = forest.target
+
+X = []
+Y = []
+
+cnt = 0
+for x, y in zip(X_raw, Y_raw):
+    if y < 3:
+        X.append(np.array(x))
+        Y.append(y)
+        
+        cnt = cnt + 1
+        if cnt == 500:
+            break
+
 forest_sample_train, forest_sample_test, forest_label_train, forest_label_test = train_test_split(
-    forest.data, forest.target, test_size=0.3, random_state=22)
+    X, Y, test_size=0.3, random_state=22)
 [forest_sample_train, forest_sample_test] = reduceClassDimensions(4, forest_sample_train, forest_sample_test)
 
 # Iris dataset
@@ -58,11 +75,11 @@ digits_sample_train, digits_sample_test, digits_label_train, digits_label_test =
 [digits_sample_train, digits_sample_test] = reduceClassDimensions(4, digits_sample_train, digits_sample_test)
 
 # Choose your set to use the QKE
-sample_train = breast_sample_train
-label_train = breast_label_train
+sample_train = forest_sample_train
+label_train = forest_label_train
 
-sample_test = breast_sample_test
-label_test = breast_label_test
+sample_test = forest_sample_test
+label_test = forest_label_test
 
 
 zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)
