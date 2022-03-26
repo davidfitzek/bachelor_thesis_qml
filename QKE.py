@@ -1,4 +1,5 @@
 from configparser import Interpolation
+from ctypes import sizeof
 from distutils.util import execute
 from hmac import trans_36
 from sys import orig_argv
@@ -18,44 +19,45 @@ from urllib3 import encode_multipart_formdata
 from qiskit_machine_learning.kernels import QuantumKernel
 
 
-# Data manipulation for iris dataset
+# Data import and manipulation
 
+# Data manipulation for iris dataset
 iris = datasets.load_iris()
 
-X = iris.data#[:100]
-Y = iris.target#[:100]
-
-x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=10)
+# Split the dataset
+iris_sample_train, iris_sample_test, iris_label_train, iris_label_test = train_test_split(iris.data, iris.target, test_size=0.3, random_state=10)
 
 
 # Data manipulation for the digits dataset
 digits = datasets.load_digits(n_class=2)
+
 # Split the dataset
-sample_train, sample_test, label_train, label_test = train_test_split(
+digits_sample_train, digits_sample_test, digits_label_train, digits_label_test = train_test_split(
     digits.data, digits.target, test_size=0.2, random_state=22)
 
 # Reduce dimensions
 n_dim = 4
-pca = PCA(n_components=n_dim).fit(sample_train)
-sample_train = pca.transform(sample_train)
-sample_test = pca.transform(sample_test)
+pca = PCA(n_components=n_dim).fit(digits_sample_train)
+digits_sample_train = pca.transform(digits_sample_train)
+digits_sample_test = pca.transform(digits_sample_test)
 
 # Normalise
-std_scale = StandardScaler().fit(sample_train)
-sample_train = std_scale.transform(sample_train)
-sample_test = std_scale.transform(sample_test)
+std_scale = StandardScaler().fit(digits_sample_train)
+digits_sample_train = std_scale.transform(digits_sample_train)
+digits_sample_test = std_scale.transform(digits_sample_test)
 
 # Scale
-samples = np.append(sample_train, sample_test, axis=0)
-minmax_scale = MinMaxScaler((-1, 1)).fit(samples)
-sample_train = minmax_scale.transform(sample_train)
-sample_test = minmax_scale.transform(sample_test)
+digits_samples = np.append(digits_sample_train, digits_sample_test, axis=0)
+minmax_scale = MinMaxScaler((-1, 1)).fit(digits_samples)
+digits_sample_train = minmax_scale.transform(digits_sample_train)
+digits_sample_test = minmax_scale.transform(digits_sample_test)
 
-sample_train = sample_train[:100]
-label_train = label_train[:100]
 
-sample_test = sample_test[:20]
-label_test = label_test[:20]
+sample_train = iris_sample_train#digits_sample_train[:100]
+label_train = iris_label_train#digits_label_train[:100]
+
+sample_test = iris_sample_test#digits_sample_test[:20]
+label_test = iris_label_test#digits_label_test[:20]
 
 
 zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)
@@ -95,5 +97,4 @@ for k in classical_kernels:
     classical_svc = SVC(kernel=k)
     classical_svc.fit(sample_train, label_train)
     classical_score = classical_svc.score(sample_test, label_test)
-
-    print('%s kernel classification score: %0.2f' % (k, classical_score))
+    print('%s kernel classification score: %0.5f' % (k, classical_score))
