@@ -53,6 +53,9 @@ x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
 
 clf = SVC(kernel='linear',gamma='scale')
 clf.fit(x_train,y_train)
+#for i in range(x_train.shape[0]): ## Looping through batches
+#        X_batch, Y_batch = x_train[i], y_train[i]
+#        clf.partial_fit(X_batch, Y_batch) ## Partially fitting data in batches
 y_pred = clf.predict(x_test)
 
 print("Accuracy:",accuracy_score(y_test, y_pred))
