@@ -23,19 +23,27 @@ from QKE_functions import *
 
 forest = datasets.fetch_covtype()
 forest_sample_train, forest_sample_test, forest_label_train, forest_label_test = train_test_split(
-    forest.data, forest.target, test_size=0.3, random_state=10)
+    forest.data, forest.target, test_size=0.3, random_state=22)
 
 [forest_sample_train, forest_sample_test] = reduceClassDimensions(4, forest_sample_train, forest_sample_test)
 
-# Data manipulation for iris dataset
+# Iris dataset
 iris = datasets.load_iris()
 
 # Split the dataset
 iris_sample_train, iris_sample_test, iris_label_train, iris_label_test = train_test_split(
-    iris.data, iris.target, test_size=0.3, random_state=10)
+    iris.data, iris.target, test_size=0.3, random_state=22)
 
+# Breastcancer dataset
+breast = datasets.load_breast_cancer()
 
-# Data manipulation for the digits dataset
+# Split the dataset
+breast_sample_train, breast_sample_test, breast_label_train, breast_label_test = train_test_split(
+    breast.data, breast.target, test_size=0.3, random_state=22)
+
+[breast_sample_train, breast_sample_test] = reduceClassDimensions(4, breast_sample_train, breast_sample_test)
+
+# Digits dataset
 digits = datasets.load_digits(n_class=2)
 
 # Split the dataset
@@ -45,11 +53,11 @@ digits_sample_train, digits_sample_test, digits_label_train, digits_label_test =
 [digits_sample_train, digits_sample_test] = reduceClassDimensions(4, digits_sample_train, digits_sample_test)
 
 # Choose your set to use the QKE
-sample_train = forest_sample_train[:1000]#digits_sample_train[:100]#iris_sample_train
-label_train = forest_label_train[:1000]#digits_label_train[:100]#iris_label_train
+sample_train = breast_sample_train
+label_train = breast_label_train
 
-sample_test = forest_sample_test[:100]#digits_sample_test[:20]#iris_sample_test
-label_test = forest_label_test[:100]#digits_label_test[:20]#iris_label_test
+sample_test = breast_sample_test
+label_test = breast_label_test
 
 
 zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)

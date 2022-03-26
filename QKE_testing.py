@@ -24,5 +24,7 @@ forest_sample_train, forest_sample_test, forest_label_train, forest_label_test =
     forest.data, forest.target, test_size=0.3, random_state=14)
 
 [forest_sample_train, forest_sample_test] = reduceClassDimensions(4, forest_sample_train, forest_sample_test)
+A = []
 
-print(forest_sample_train, forest_label_train)
+#print(A)
+#print(forest_sample_train, forest_label_train)
