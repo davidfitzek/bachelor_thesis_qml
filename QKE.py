@@ -17,16 +17,20 @@ from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, Aer, exec
 from qiskit.tools.visualization import circuit_drawer
 from urllib3 import encode_multipart_formdata
 from qiskit_machine_learning.kernels import QuantumKernel
-
+from QKE_functions import *
 
 # Data import and manipulation
+
+forest = datasets.fetch_covtype()
+forest_sample_train, forest_sample_test, forest_label_train, forest_label_test = train_test_split(
+    forest.data, forest.target, test_size=0.3, random_state=22)
 
 # Data manipulation for iris dataset
 iris = datasets.load_iris()
 
 # Split the dataset
-iris_sample_train, iris_sample_test, iris_label_train, iris_label_test = train_test_split(iris.data, iris.target, test_size=0.3, random_state=10)
-
+iris_sample_train, iris_sample_test, iris_label_train, iris_label_test = train_test_split(
+    iris.data, iris.target, test_size=0.3, random_state=10)
 
 # Data manipulation for the digits dataset
 digits = datasets.load_digits(n_class=2)
@@ -35,29 +39,14 @@ digits = datasets.load_digits(n_class=2)
 digits_sample_train, digits_sample_test, digits_label_train, digits_label_test = train_test_split(
     digits.data, digits.target, test_size=0.2, random_state=22)
 
-# Reduce dimensions
-n_dim = 4
-pca = PCA(n_components=n_dim).fit(digits_sample_train)
-digits_sample_train = pca.transform(digits_sample_train)
-digits_sample_test = pca.transform(digits_sample_test)
+[digits_sample_train, digits_sample_test] = reduceClassDimensions(4, digits_sample_train, digits_sample_test)
 
-# Normalise
-std_scale = StandardScaler().fit(digits_sample_train)
-digits_sample_train = std_scale.transform(digits_sample_train)
-digits_sample_test = std_scale.transform(digits_sample_test)
+# Choose your set to use the QKE
+sample_train = digits_sample_train[:100]#iris_sample_train
+label_train = digits_label_train[:100]#iris_label_train
 
-# Scale
-digits_samples = np.append(digits_sample_train, digits_sample_test, axis=0)
-minmax_scale = MinMaxScaler((-1, 1)).fit(digits_samples)
-digits_sample_train = minmax_scale.transform(digits_sample_train)
-digits_sample_test = minmax_scale.transform(digits_sample_test)
-
-
-sample_train = iris_sample_train#digits_sample_train[:100]
-label_train = iris_label_train#digits_label_train[:100]
-
-sample_test = iris_sample_test#digits_sample_test[:20]
-label_test = iris_label_test#digits_label_test[:20]
+sample_test = digits_sample_test[:20]#iris_sample_test
+label_test = digits_label_test[:20]#iris_label_test
 
 
 zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)
@@ -81,7 +70,6 @@ axs[1].imshow(np.asmatrix(matrix_test),
                 interpolation='nearest', origin='upper', cmap='Reds')
 axs[1].set_title("Testing kernel matrix")
 #plt.show()
-
 
 zzpc_svc = SVC(kernel='precomputed')
 zzpc_svc.fit(matrix_train, label_train)
