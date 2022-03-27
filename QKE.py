@@ -2,7 +2,6 @@ from configparser import Interpolation
 from ctypes import sizeof
 from distutils.util import execute
 from hmac import trans_36
-from sys import orig_argv
 from unicodedata import digit
 from sklearn import datasets
 import pandas as pd
@@ -22,18 +21,6 @@ from QKE_functions import *
 
 # Data import and manipulation
 
-# Ad_hoc dataset
-adhoc_dimension = 2
-adhoc_sample_train, adhoc_sample_test, adhoc_label_train, adhoc_label_test, adhoc_total = ad_hoc_data(
-    training_size=20,
-    test_size=5,
-    n=adhoc_dimension,
-    gap=0.3,
-    plot_data=False,
-    one_hot=False,
-    include_sample_total=True,
-)
-
 # Forest dataset
 forest = datasets.fetch_covtype()
 
@@ -48,7 +35,7 @@ for x, y in zip(X_raw, Y_raw):
     if y < 3:
         X.append(np.array(x))
         Y.append(y)
-        
+
         cnt = cnt + 1
         if cnt == 500:
             break
