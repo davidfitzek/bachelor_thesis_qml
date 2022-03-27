@@ -3,7 +3,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, minmax_scale
 import numpy as np
 
-def reduceClassDimensions(n_dim, sample_train, sample_test):
+def reduceAttributeDimensions(n_dim, sample_train, sample_test):
     # Reduce dimensions
     pca = PCA(n_components=n_dim).fit(sample_train)
     sample_train = pca.transform(sample_train)
@@ -18,3 +18,17 @@ def reduceClassDimensions(n_dim, sample_train, sample_test):
     sample_train = minmax_scale.transform(sample_train)
     sample_test = minmax_scale.transform(sample_test)
     return sample_train, sample_test
+def reduceClassDimensions(X_raw, Y_raw, n_class):
+    X = []
+    Y = []
+
+    cnt = 0
+    for x, y in zip(X_raw, Y_raw):
+        if y < n_class:
+            X.append(np.array(x))
+            Y.append(y)
+
+            cnt = cnt + 1
+            if cnt == 500:
+                break
+    return X, Y
