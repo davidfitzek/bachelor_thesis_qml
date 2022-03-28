@@ -2,7 +2,7 @@
 
 import pennylane as qml
 from pennylane import numpy as np
-from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer, GradientDescentOptimizer
+import pennylane.optimize as opt
 
 from sklearn.datasets import load_iris, load_breast_cancer, fetch_covtype
 from sklearn.model_selection import train_test_split
@@ -63,9 +63,9 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	return com.square_loss(labels, preds)
 
 def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
-	opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
-	#opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
-	#opt = GradientDescentOptimizer(stepsize = 0.01)
+	optimiser = opt.NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
+	#optimiser = opt.AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
+	#optimiser = opt.GradientDescentOptimizer(stepsize = 0.01)
 	batch_size = 5 # This might be something which can be adjusted
 
 	costs = []
@@ -89,7 +89,7 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
 		X_train_batch = data_train.X[batch_index]
 		Y_train_batch = data_train.Y[batch_index]
-		weights, bias, _, _ = opt.step(cost, weights, bias, X_train_batch, Y_train_batch)
+		weights, bias, _, _ = optimiser.step(cost, weights, bias, X_train_batch, Y_train_batch)
 		# Compute predictions on train and test set
 		predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
 		predictions_val = [np.sign(variational_classifier(weights, x, bias)) for x in data_val.X]
@@ -234,7 +234,7 @@ def load_data_forest():
 
 def main():
 
-	n_qubits = 6
+	n_qubits = 2
 	n_layers = 6
 
 	# Can be any function that takes an input vector and encodes it
@@ -244,7 +244,7 @@ def main():
 	layer_fun = layer_ex1
 
 	# Load the iris data
-	data = load_data_forest()
+	data = load_data_iris()
 
 	run_variational_classifier(
 		n_qubits,
