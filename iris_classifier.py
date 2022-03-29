@@ -20,6 +20,9 @@ class Data:
 		self.X = X
 		self.Y = Y
 
+	def size(self):
+		return len(self.Y)
+
 # The layer for the circuit
 def layer_ex1(weights):
 	n = len(weights)
@@ -81,7 +84,7 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		return cost_fun(weights, bias, features, labels, variational_classifier)
 
 	# Number of training points, used when choosing batch indexes
-	n_train = len(data_train.Y)
+	n_train = data_train.size()
 
 	for i in range(n_iter):
 
