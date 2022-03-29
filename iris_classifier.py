@@ -178,7 +178,7 @@ def load_data_cancer():
 	return Data(X, Y)
 
 def main():
-	n_iter = 4 # Number of iterations, should be changed to a tolerance based process instead
+	n_iter = 2 # Number of iterations, should be changed to a tolerance based process instead
 	n_qubits = 2
 	n_layers = 6
 
@@ -191,12 +191,14 @@ def main():
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
-	cross_fold=4 # The ammount of parts the data is divided into, =1 gives no cross validation
+	cross_fold=2 # The ammount of parts the data is divided into, =1 gives no cross validation
 	p = 0.7 # The proportion of the data which should be use for training
 
+
+	res = []
 	# Note that total ammount of iterations is n_iter*cross_fold
 	for cross_iter in range(cross_fold):
-		res=run_variational_classifier( #Tried to use res to calculate a final mean and stdrd deviation, but can't get it to work
+		res.append(run_variational_classifier( #Tried to use res to calculate a final mean and stdrd deviation, but can't get it to work
 		n_iter,
 		n_qubits,
 		n_layers,
@@ -206,8 +208,12 @@ def main():
 		p,
 		cross_iter+1
 		)
+		)
 	
-	#print('Final Accuracy: {:0.7f}'.format(res))
+	# Convert numpy tensors to floats
+	res = [float(r) for r in res]
+
+	print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(statistics.mean(res), statistics.stdev(res)))
 
 if __name__ == '__main__':
 	main()
