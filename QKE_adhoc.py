@@ -2,7 +2,6 @@ from configparser import Interpolation
 from ctypes import sizeof
 from distutils.util import execute
 from hmac import trans_36
-from sys import orig_argv
 from unicodedata import digit
 from sklearn import datasets
 import pandas as pd

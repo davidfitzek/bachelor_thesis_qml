@@ -56,14 +56,14 @@ digits_sample_train, digits_sample_test, digits_label_train, digits_label_test =
 [digits_sample_train, digits_sample_test] = reduceAttributeDimensions(4, digits_sample_train, digits_sample_test)
 
 # Choose your set to use the QKE
-sample_train = iris_sample_train
-label_train = iris_label_train
+sample_train = forest_sample_train
+label_train = forest_label_train
 
-sample_test = iris_sample_test
-label_test = iris_label_test
+sample_test = forest_sample_test
+label_test = forest_label_test
 
 
-zz_map = ZZFeatureMap(feature_dimension=4, reps = 2, entanglement="linear", insert_barriers=True)
+zz_map = ZZFeatureMap(feature_dimension=4, reps = 1, entanglement="linear", insert_barriers=True)
 zz_kernel = QuantumKernel(feature_map=zz_map, quantum_instance=Aer.get_backend('statevector_simulator'))
 zz_circuit = zz_kernel.construct_circuit(sample_train[0], sample_train[1])
 zz_circuit.decompose().decompose().draw(output='mpl')
@@ -83,7 +83,7 @@ axs[0].set_title("Training kernel matrix")
 axs[1].imshow(np.asmatrix(matrix_test), 
                 interpolation='nearest', origin='upper', cmap='Reds')
 axs[1].set_title("Testing kernel matrix")
-#plt.show()
+plt.show()
 
 zzpc_svc = SVC(kernel='precomputed')
 zzpc_svc.fit(matrix_train, label_train)
