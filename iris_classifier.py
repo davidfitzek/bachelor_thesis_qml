@@ -1,4 +1,5 @@
 # iris_classifier.py
+
 import statistics 
 
 import pennylane as qml
@@ -8,7 +9,6 @@ from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer
 from sklearn.datasets import load_iris, load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sympy import true
-
 
 import common as com
 
@@ -20,6 +20,9 @@ class Data:
 	def __init__(self, X, Y):
 		self.X = X
 		self.Y = Y
+
+	def size(self):
+		return len(self.Y)
 
 # The layer for the circuit
 def layer_ex1(weights):
@@ -77,7 +80,7 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit,cross_it
 		return cost_fun(weights, bias, features, labels, variational_classifier)
 
 	# Number of training points, used when choosing batch indexes
-	n_train = len(data_train.Y)
+	n_train = data_train.size()
 
 	for i in range(n_iter):
 
@@ -96,38 +99,61 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit,cross_it
 
 		print(
 			'Cross validation iteration: {:5d} | Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f}'
-			''.format(cross_iter, i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
+			''.format(cross_iter + 1, i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
 		)
 	#returns a final accuracy	
 	return accuracy_val
 
 # Split a data object into training and validation data
-# p is the proportion of the data which should be used for training
-def split_data(data, p):
+# start and stop are the indicies for where that validation data begins and ends
+# The rest of the data points are assumed to be training data
+def split_data(data, start, stop):
 
-	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
+	X_train = np.concatenate((data.X[ : start], data.X[stop : ]))
+	Y_train = np.concatenate((data.Y[ : start], data.Y[stop : ]))
+
+	X_val = data.X[start : stop]
+	Y_val = data.Y[start : stop]
 
 	return Data(X_train, Y_train), Data(X_val, Y_val)
 
-def run_variational_classifier(n_iter,n_qubits, n_layers, data, stateprep_fun, layer_fun, p, cross_iter):
+# Shuffles the data points
+def shuffle_data(data):
+	N = data.size() # Number of data points 
 
-		device = qml.device("default.qubit", wires = n_qubits)
-		
-		# Circuit function used by pennylane
-		@qml.qnode(device)
-		def circuit(weights, x):
-			return circuit_fun(weights, x, stateprep_fun, layer_fun)
-		
+	indexes = np.random.permutation(N)
 
-		data_train, data_val = split_data(data, p)
+	return Data(data.X[indexes], data.Y[indexes])
+
+def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, layer_fun, cross_fold):
+
+	device = qml.device("default.qubit", wires = n_qubits)
+		
+	# Circuit function used by pennylane
+	@qml.qnode(device)
+	def circuit(weights, x):
+		return circuit_fun(weights, x, stateprep_fun, layer_fun)
+
+	# Shuffle our data to introduce a random element to our train and test parts
+	data = shuffle_data(data)
+
+	# Compute the size of 
+	N = data.size()
+	cross_size = N // cross_fold
+
+	res = [] # List for holding our accuracy results
+
+	for cross_iter in range(cross_fold):
+			
+		data_train, data_val = split_data(data, cross_iter * cross_size, (cross_iter + 1) * cross_size)
 		
 		weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
 		bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
-		res=optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_iter)
-		return res
-	
-		
+		res.append(
+			optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_iter)
+		)
+	return res
 
 # Load the iris data set from sklearn into a data object
 def load_data_iris():
@@ -191,23 +217,16 @@ def main():
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
-	cross_fold=2 # The ammount of parts the data is divided into, =1 gives no cross validation
-	p = 0.7 # The proportion of the data which should be use for training
+	cross_fold = 2 # The ammount of parts the data is divided into, =1 gives no cross validation
 
-
-	res = []
-	# Note that total ammount of iterations is n_iter*cross_fold
-	for cross_iter in range(cross_fold):
-		res.append(run_variational_classifier( #Tried to use res to calculate a final mean and stdrd deviation, but can't get it to work
+	res = run_variational_classifier(
 		n_iter,
 		n_qubits,
 		n_layers,
 		data,
 		stateprep_fun,
 		layer_fun,
-		p,
-		cross_iter+1
-		)
+		cross_fold
 		)
 	
 	# Convert numpy tensors to floats
