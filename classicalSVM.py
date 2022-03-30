@@ -84,41 +84,48 @@ def run_SVM(kernel_function,poly_degree,data,cross_fold):
 
     clf = SVC(kernel=kernel_function,degree=poly_degree,gamma='scale')
 
-    #Calculates accuracy with cross validation, and presents mean and standard deviation
-    scores=cross_val_score(clf,X,Y, cv=cross_fold)
-    print("Accuracy: %0.2f ± %0.2f" % (scores.mean(), scores.std()))
+    if cross_fold<=1:
+        #Calculates accuracy without cross validation
+        x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
+        clf.fit(x_train,y_train)
+        y_pred = clf.predict(x_test)
+        print("Accuracy: %0.2f, Cross_fold ammount: %0.2f, Poly_degree: %0.2f" % (accuracy_score(y_test, y_pred), cross_fold, poly_degree))
+        return accuracy_score(y_test, y_pred)
+    else:
+        #Calculates accuracy with cross validation, and presents mean and standard deviation
+        scores=cross_val_score(clf,X,Y, cv=cross_fold)
+        print("Accuracy: %0.2f ± %0.2f, Cross_fold ammount: %0.2f, Poly_degree: %0.2f" % (scores.mean(), scores.std(), cross_fold, poly_degree))
+        return scores.mean()
 
 def load_data_iris():
     iris = datasets.load_iris()
-
-    #X = iris.data#[:100]
-    #Y = iris.target#[:100]
 
     return iris
 
 def load_data_cancer():
     breast_cancer = datasets.load_breast_cancer()
 
-    bc = pd.DataFrame(breast_cancer.data, columns = breast_cancer.feature_names)
-    bc
-    print(breast_cancer.feature_names)
-    print(breast_cancer.target_names)
+    #bc = pd.DataFrame(breast_cancer.data, columns = breast_cancer.feature_names)
+    #bc
+    #print(breast_cancer.feature_names)
+    #print(breast_cancer.target_names)
 
-    #X = breast_cancer.data
-    #Y = breast_cancer.target
     return breast_cancer
 
 def main():
-    #Kernel choices:‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’
+    #Kernel choices:‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’
     kernel_function='linear'
     #poly_degree is only relevant if kernel='poly' otherwise ignored
     poly_degree=2
 
     data=load_data_iris()
 
-    #Ammount of parts the data is divided into (The runtime will be increased by a factor of this number roughly)
-    cross_fold=3
+    #Ammount of parts the data is divided into for cross validation
+    #The runtime will be increased by a factor of this number roughly
+    #if crossfold<=1 no cross validation is done
+    cross_fold=5
 
+    #Run the SVM once normally
     run_SVM(
         kernel_function,
         poly_degree,
@@ -126,6 +133,25 @@ def main():
         cross_fold
     )
 
+    """"
+    #Run the SVM for a range of polynomial degrees and then plot
+    res=[]
+    for x in range(poly_degree):
+     res.append(run_SVM(
+        kernel_function,
+        x,
+        data,
+        cross_fold
+    )
+    )
+    res=[float(r) for r in res]
+    plt.plot(range(poly_degree),res)
+    plt.xlabel('Polynomial order')
+    plt.ylabel('Accuracy')
+    plt.title('Cross validation folds={:5d}'.format(cross_fold))
+    plt.show()
+    """
 
+    
 if __name__=='__main__':
     main()
