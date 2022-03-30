@@ -1,7 +1,7 @@
 from sklearn import datasets
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
@@ -19,7 +19,7 @@ s = list(s)
 rows = list(range(100,150))
 df = df.drop(df.index[rows])
 """
-
+"""
 ### Iris
 
 iris = datasets.load_iris()
@@ -52,14 +52,19 @@ Y = iris.target#[:100]
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
 
 clf = SVC(kernel='linear',gamma='scale')
-clf.fit(x_train,y_train)
+#clf.fit(x_train,y_train)
+
 #for i in range(x_train.shape[0]): ## Looping through batches
 #        X_batch, Y_batch = x_train[i], y_train[i]
 #        clf.partial_fit(X_batch, Y_batch) ## Partially fitting data in batches
-y_pred = clf.predict(x_test)
 
-print("Accuracy:",accuracy_score(y_test, y_pred))
+#y_pred = clf.predict(x_test)
+#print("Accuracy:",accuracy_score(y_test, y_pred))
 
+scores=cross_val_score(clf,y_test,y_pred, cv=5)
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+
+"""
 
 ### Breast Cancer
 
@@ -73,16 +78,14 @@ print(breast_cancer.target_names)
 X = breast_cancer.data
 Y = breast_cancer.target
 
-#print(X)
-#print(Y)
-
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
 
 clf = SVC(kernel='linear',gamma='scale')
 #clf = SVC(kernel="poly",degree=2,gamma='scale')
 
-clf.fit(x_train,y_train)
+#clf.fit(x_train,y_train)
+#y_pred = clf.predict(x_test)
+#print("Accuracy:",accuracy_score(y_test, y_pred))
 
-y_pred = clf.predict(x_test)
-
-print("Accuracy:",accuracy_score(y_test, y_pred))
+scores=cross_val_score(clf,X,Y, cv=3)
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
