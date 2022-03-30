@@ -14,4 +14,5 @@ pip install autograd jax jaxlib
 pip install scikit-learn
 
 pip install qiskit
+pip install qiskit_machine_learning
 
