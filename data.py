@@ -105,3 +105,15 @@ def load_data_forest():
 	Y = 2 * Y - 3
 
 	return Data(X, Y)
+
+def load_data_adhoc(dimensions = 2, size = 500, gap = 0.3):
+
+	# Load the data set
+	X, Y, _, _ = ad_hoc_data(training_size = size, test_size = 0, n = dimensions, gap = gap)
+
+	# PennyLane numpy differ from normal numpy.
+	# Converts np.ndarray to pennylane.np.tensor.tensor
+	Y = np.array([y[0] for y in Y]) # Y has two columns although these columns are either [0, 1] or [1, 0] so we can discard the second dimension
+	X = np.array([np.array(x) for x in X], requires_grad = False)
+
+	return Data(X, Y)
