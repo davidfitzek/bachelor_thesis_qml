@@ -7,8 +7,6 @@ import pennylane.optimize as opt
 import common as com
 import data as dat
 
-import json
-
 import matplotlib.pyplot as plt
 
 import time
@@ -65,9 +63,6 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	return com.square_loss(labels, preds)
 
 def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers):
-	#opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
-	opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
-def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 	optimiser = opt.NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	#optimiser = opt.AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	#optimiser = opt.GradientDescentOptimizer(stepsize = 0.01)
@@ -111,14 +106,6 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 
 	return [i, cost_var]
 
-# Split a data object into training and validation data
-# p is the proportion of the data which should be used for training
-def split_data(data, p):
-
-	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
-
-	return Data(X_train, Y_train), Data(X_val, Y_val)
-
 def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop):
 
 	# The device and qnode used by pennylane
@@ -143,13 +130,14 @@ def main():
 
 	n_qubits = 2
 	#n_qubits = 5
+
 	#it will test all the number of layers up to this number
-	range_layers = 5
+	range_layers = 15
 
 	# if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
 	accuracy_stop = 0.95
 	cost_stop = 1
-	iter_stop = 150
+	iter_stop = 20
 
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_amplitude
@@ -159,12 +147,13 @@ def main():
 
 	# Load data
 	data = dat.load_data_iris()
-	#data = load_data_cancer()
+	#data = dat.load_data_cancer()
 
 	#testing how many layers it takes to achieve accuracy_stop and cost_stop
 	iterations = [0]*range_layers
 	cost = [0]*range_layers
 	sec = [0]*range_layers
+
 	for i in range(range_layers):
 		n_layers = i + 1
 		print("Starting with layer " + str(n_layers) + " of " + str(range_layers))
@@ -172,6 +161,8 @@ def main():
 		[iterations[i], cost[i]] = run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop)
 		toc = time.perf_counter()
 		sec[i] = toc - tic
+
+	print("Done!")
 
 	with open("iterarions.csv", "w") as f:
 		write = csv.writer(f)
@@ -185,8 +176,6 @@ def main():
 
 	with open("sec.csv", "w") as f:
 		write = csv.writer(f)
-	# Load the iris data
-	data = dat.load_data_iris()
 
 		write.writerow(sec)
 
