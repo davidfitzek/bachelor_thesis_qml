@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 
 import time
 
+import csv
+
 np.random.seed(123) # Set seed for reproducibility
 
 # Collect this in a class
@@ -187,12 +189,12 @@ def main():
 
 	n_qubits = 2
 	#it will test all the number of layers up to this number
-	range_layers = 25
+	range_layers = 5
 
 	# if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
-	accuracy_stop = 0.99
-	cost_stop = 0.7
-	iter_stop = 250
+	accuracy_stop = 0.95
+	cost_stop = 1
+	iter_stop = 150
 
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_amplitude
@@ -200,8 +202,9 @@ def main():
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
-	# Load the iris data
+	# Load data
 	data = load_data_iris()
+	#data = load_data_cancer()
 
 	#testing how many layers it takes to achieve accuracy_stop and cost_stop
 	iterations = [0]*range_layers
@@ -214,6 +217,21 @@ def main():
 		[iterations[i], cost[i]] = run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop)
 		toc = time.perf_counter()
 		sec[i] = toc - tic
+
+	with open("iterarions.csv", "w") as f:
+		write = csv.writer(f)
+
+		write.writerow(iterations)
+
+	with open("cost.csv", "w") as f:
+		write = csv.writer(f)
+
+		write.writerow(cost)
+
+	with open("sec.csv", "w") as f:
+		write = csv.writer(f)
+
+		write.writerow(sec)
 
 	plt.subplot(3, 1, 1)
 	plt.plot(iterations)
