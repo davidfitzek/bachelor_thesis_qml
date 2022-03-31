@@ -37,6 +37,10 @@ def stateprep_amplitude(features):
 	# Normalise the features here and also pad it to have the length of a power of two
 	qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
 
+def stateprep_angle(features):
+	wires = len(features)
+	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Y')
+
 # The circuit function, allows variable statepreparation and layer functions
 def circuit_fun(weights, features, stateprep_fun, layer_fun):
 
@@ -134,11 +138,11 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 
 def main():
 
-	n_qubits = 2
+	n_qubits = 4
 	n_layers = 4
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_fun = stateprep_amplitude
+	stateprep_fun = stateprep_angle
 
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
