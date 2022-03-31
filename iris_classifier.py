@@ -2,12 +2,12 @@
 
 import pennylane as qml
 from pennylane import numpy as np
-from pennylane.optimize import NesterovMomentumOptimizer, AdamOptimizer
-
-from sklearn.datasets import load_iris, load_breast_cancer
-from sklearn.model_selection import train_test_split
+import pennylane.optimize as opt
 
 import common as com
+import data as dat
+
+import json
 
 import matplotlib.pyplot as plt
 
@@ -17,12 +17,6 @@ import csv
 
 np.random.seed(123) # Set seed for reproducibility
 
-# Collect this in a class
-class Data:
-
-	def __init__(self, X, Y):
-		self.X = X
-		self.Y = Y
 
 # The layer for the circuit
 def layer_ex1(weights):
@@ -37,17 +31,21 @@ def layer_ex1(weights):
 		qml.CNOT(wires = [i, (i + 1) % n])
 
 def layer_ex2(weights):
-    n = len(weights)
+	n = len(weights)
 
-    # Adds rotation matrices and controlled NOT matrices
-    for i, row in enumerate(weights):
-        qml.Rot(row[0], row[1], row[2], wires = i)
-        qml.CNOT(wires = [i, (i + 1) % n])
+	# Adds rotation matrices and controlled NOT matrices
+	for i, row in enumerate(weights):
+		qml.Rot(row[0], row[1], row[2], wires = i)
+		qml.CNOT(wires = [i, (i + 1) % n])
 
 def stateprep_amplitude(features):
-    wires = np.int64(np.ceil(np.log2(len(features))))
-    # Normalise the features here and also pad it to have the length of a power of two
-    qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
+	wires = np.int64(np.ceil(np.log2(len(features))))
+	# Normalise the features here and also pad it to have the length of a power of two
+	qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
+
+def stateprep_angle(features):
+	wires = len(features)
+	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Y')
 
 # The circuit function, allows variable statepreparation and layer functions
 def circuit_fun(weights, features, stateprep_fun, layer_fun):
@@ -69,6 +67,10 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers):
 	#opt = NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	opt = AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
+def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
+	optimiser = opt.NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
+	#optimiser = opt.AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
+	#optimiser = opt.GradientDescentOptimizer(stepsize = 0.01)
 	batch_size = 5 # This might be something which can be adjusted
 	
 	# Variational classifier function used by pennylane
@@ -80,7 +82,7 @@ def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_trai
 		return cost_fun(weights, bias, features, labels, variational_classifier)
 
 	# Number of training points, used when choosing batch indexes
-	n_train = len(data_train.Y)
+	n_train = data_train.size()
 
 	accuracy_val = 0.0
 	cost_var = 100 #just something big
@@ -90,7 +92,7 @@ def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_trai
 		batch_index = np.random.randint(0, high = n_train, size = (batch_size, ))
 		X_train_batch = data_train.X[batch_index]
 		Y_train_batch = data_train.Y[batch_index]
-		weights, bias, _, _ = opt.step(cost, weights, bias, X_train_batch, Y_train_batch)
+		weights, bias, _, _ = optimiser.step(cost, weights, bias, X_train_batch, Y_train_batch)
 		# Compute predictions on train and test set
 		predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
 		predictions_val = [np.sign(variational_classifier(weights, x, bias)) for x in data_val.X]
@@ -130,60 +132,12 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 	# The proportion of the data which should be use for training
 	p = 0.7
 
-	data_train, data_val = split_data(data, p)
+	data_train, data_val = dat.split_data(data, p)
 
 	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
 	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
 	return optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers)
-
-# Load the iris data set from sklearn into a data object
-def load_data_iris():
-
-	# Load the data set
-	data = load_iris()
-
-	X = data['data']
-	Y = data['target']
-
-	# We will only look at two types, -1 and 1
-	# In Y, elements are of three types 0, 1, and 2.
-	# We simply cutoff the 2:s for now
-	# The array is sorted so we can easily find first occurence of a 2 with binary search
-	cutoff = np.searchsorted(Y, 2)
-
-	# Now simply remove the x:s and y:s corresponding to the 2:s
-	X = X[: cutoff]
-	Y = Y[: cutoff]
-
-	# Scale and translate Y from 0 and 1 to -1 and 1
-	Y = 2 * Y - 1
-	Y = np.array(Y) # PennyLane numpy differ from normal numpy. Converts np.ndarray to pennylane.np.tensor.tensor
-
-	# PennyLane numpy differ from normal numpy.
-	# Converts np.ndarray to pennylane.np.tensor.tensor
-	Y = np.array(Y)
-	X = np.array([np.array(x) for x in X], requires_grad = False)
-
-	return Data(X, Y)
-
-def load_data_cancer():
-
-	# Load the data set
-	data = load_breast_cancer()
-
-	X = data['data']
-	Y = data['target']
-
-	# Scale and translate Y from 0 and 1 to -1 and 1
-	Y = 2 * Y - 1
-
-	# PennyLane numpy differ from normal numpy.
-	# Converts np.ndarray to pennylane.np.tensor.tensor
-	Y = np.array(Y)
-	X = np.array([np.array(x) for x in X], requires_grad = False)
-
-	return Data(X, Y)
 
 def main():
 
@@ -204,7 +158,7 @@ def main():
 	layer_fun = layer_ex1
 
 	# Load data
-	data = load_data_iris()
+	data = dat.load_data_iris()
 	#data = load_data_cancer()
 
 	#testing how many layers it takes to achieve accuracy_stop and cost_stop
@@ -231,6 +185,8 @@ def main():
 
 	with open("sec.csv", "w") as f:
 		write = csv.writer(f)
+	# Load the iris data
+	data = dat.load_data_iris()
 
 		write.writerow(sec)
 
