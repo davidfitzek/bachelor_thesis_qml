@@ -2,6 +2,7 @@
 from pennylane import numpy as np
 from sklearn.datasets import load_iris, load_breast_cancer, fetch_covtype
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
 from qiskit_machine_learning.datasets import ad_hoc_data
 
 # Collect this in a class
@@ -21,6 +22,19 @@ def split_data(data, p):
 	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
 
 	return Data(X_train, Y_train), Data(X_val, Y_val)
+
+# Reduces the dimension of the features based on principal component analysis
+def reduce_data(data, dim):
+	# Reduce dimensions
+	X_red = data.X
+	pca = PCA(n_components = dim)
+	X_red = pca.fit_transform(X_red)
+
+	# PennyLane numpy differ from normal numpy.
+	# Converts np.ndarray to pennylane.np.tensor.tensor
+	X_red = np.array([np.array(x) for x in X_red])
+
+	return Data(X_red, data.Y)
 
 # Load the iris data set from sklearn into a data object
 def load_data_iris():
