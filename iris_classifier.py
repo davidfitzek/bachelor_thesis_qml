@@ -97,7 +97,7 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		cost_ = cost(weights, bias, data.X, data.Y)
 
 		print(
-			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} '
+			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy training: {:0.7f} | Accuracy validation: {:0.7f} '
 			''.format(i + 1, cost_, accuracy_train, accuracy_val)
 		)
 
@@ -138,17 +138,17 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 
 def main():
 
-	n_qubits = 4
+	n_qubits = 2
 	n_layers = 4
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_fun = stateprep_angle
+	stateprep_fun = stateprep_amplitude
 
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
 	# Load the iris data
-	data = dat.load_data_iris()
+	data = dat.load_data_adhoc(dimensions = 3)
 
 	run_variational_classifier(
 		n_qubits,

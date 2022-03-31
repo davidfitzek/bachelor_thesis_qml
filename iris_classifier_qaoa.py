@@ -62,7 +62,7 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		cost_ = cost(weights, bias, data.X, data.Y)
 
 		print(
-			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} '
+			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy training: {:0.7f} | Accuracy validation: {:0.7f} '
 			''.format(i + 1, cost_, accuracy_train, accuracy_val)
 		)
 
@@ -76,7 +76,7 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		'acc_val': acc_val
 	}
 
-	with open('data/test.json', 'w') as f:
+	with open('data/test_qaoa.json', 'w') as f:
 		json.dump(doc, f)
 
 def run_variational_classifier(n_qubits, n_layers, data, circuit_fun):
@@ -103,7 +103,7 @@ def run_variational_classifier(n_qubits, n_layers, data, circuit_fun):
 
 def main():
 
-	n_qubits = 4
+	n_qubits = 3
 	n_layers = 4
 
 	# Can be any function that takes an input of features and weights
@@ -111,7 +111,7 @@ def main():
 
 
 	# Load the iris data
-	data = dat.load_data_iris()
+	data = dat.load_data_adhoc(dimensions = 3)
 
 	run_variational_classifier(
 		n_qubits,
