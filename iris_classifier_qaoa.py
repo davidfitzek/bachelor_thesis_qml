@@ -104,7 +104,7 @@ def run_variational_classifier(n_qubits, n_layers, data, circuit_fun):
 def main():
 
 	n_qubits = 4
-	n_layers = 6
+	n_layers = 4
 
 	# Can be any function that takes an input of features and weights
 	circuit_fun = circuit_QAOA
