@@ -135,7 +135,7 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 def main():
 
 	n_qubits = 2
-	n_layers = 6
+	n_layers = 4
 
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_amplitude
