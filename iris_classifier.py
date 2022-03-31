@@ -188,6 +188,7 @@ def load_data_cancer():
 def main():
 
 	n_qubits = 2
+	#n_qubits = 5
 	#it will test all the number of layers up to this number
 	range_layers = 5
 
