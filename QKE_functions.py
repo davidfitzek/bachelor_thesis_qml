@@ -25,7 +25,7 @@ def reduceClassDimensions(X_raw, Y_raw, n_class, n_data):
 
     cnt = 0
     for x, y in zip(X_raw, Y_raw):
-        if y < n_class:
+        if y <= n_class:
             X.append(np.array(x))
             Y.append(y)
 
