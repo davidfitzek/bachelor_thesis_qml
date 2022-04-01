@@ -131,6 +131,9 @@ dmypy.json
 # Data sets
 data/*.txt
 data/*.json
+data/*/*.json
 
 # Figures
 figs/*.pdf
+figs/*/*.pdf
+
