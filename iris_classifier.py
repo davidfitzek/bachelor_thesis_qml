@@ -22,7 +22,7 @@ def layer_ex1(weights):
 
 	# Adds controlled NOT matrices
 	for i in range(n):
-		qml.CNOT(wires = [i, (i + 1) % n])
+		qml.CNOT(wires = [i, i + 1 if i + 1 < n else 0])
 
 def layer_ex2(weights):
 	n = len(weights)
@@ -30,7 +30,7 @@ def layer_ex2(weights):
 	# Adds rotation matrices and controlled NOT matrices
 	for i, row in enumerate(weights):
 		qml.Rot(row[0], row[1], row[2], wires = i)
-		qml.CNOT(wires = [i, (i + 1) % n])
+		qml.CNOT(wires = [i, i + 1 if i + 1 < n else 0])
 
 def stateprep_amplitude(features):
 	wires = np.int64(np.ceil(np.log2(len(features))))
@@ -137,19 +137,19 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 	optimise(n_iter, weights, bias, data, data_train, data_val, circuit)
 
 def main():
-
-	n_qubits = 5
+	
+	n_qubits = 2
 	n_layers = 4
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_fun = stateprep_angle
+	stateprep_fun = stateprep_amplitude
 
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
 	# Load the iris data
-	data = dat.load_data_cancer()
-	data = dat.reduce_data(data, n_qubits)
+	data = dat.load_data_adhoc(dimensions = 2)
+	#data = dat.reduce_data(data, n_qubits)
 
 	run_variational_classifier(
 		n_qubits,

@@ -96,7 +96,7 @@ def run_variational_classifier(n_qubits, n_layers, data, circuit_fun):
 
 	n_iter = 200 # Number of iterations, should be changed to a tolerance based process instead
 
-	weights = 0.01 * np.random.randn(n_layers , 2 * n_qubits, requires_grad = True) # Initial value for the weights
+	weights = 0.01 * np.random.randn(n_layers , 2 * n_qubits if (n_qubits > 2) else n_qubits + 1, requires_grad = True) # Initial value for the weights
 	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
 	optimise(n_iter, weights, bias, data, data_train, data_val, circuit)
@@ -111,6 +111,7 @@ def main():
 
 
 	# Load the iris data
+
 	data = dat.load_data_cancer()
 	data = dat.reduce_data(data, n_qubits)
 
