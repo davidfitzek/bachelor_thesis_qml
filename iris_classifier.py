@@ -13,17 +13,6 @@ import json
 
 np.random.seed(123) # Set seed for reproducibility
 
-#flytta in i data.py
-# Collect this in a class
-class Data:
-
-	def __init__(self, X, Y):
-		self.X = X
-		self.Y = Y
-
-	def size(self):
-		return len(self.Y)
-
 # The layer for the circuit
 def layer_ex1(weights):
 	n = len(weights)
@@ -70,7 +59,7 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	preds = [variational_classifier_fun(weights, feature, bias) for feature in features]
 	return com.square_loss(labels, preds)
 
-def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
+def optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_iter):
 	optimiser = opt.NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	#optimiser = opt.AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	#optimiser = opt.GradientDescentOptimizer(stepsize = 0.01)
@@ -128,28 +117,13 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 	#returns a final accuracy
 	return accuracy_val
 
-
-#flytta till data.py
-# Split a data object into training and validation data
-# start and stop are the indicies for where that validation data begins and ends
-# The rest of the data points are assumed to be training data
-def split_data(data, start, stop):
-
-	X_train = np.concatenate((data.X[ : start], data.X[stop : ]))
-	Y_train = np.concatenate((data.Y[ : start], data.Y[stop : ]))
-
-	X_val = data.X[start : stop]
-	Y_val = data.Y[start : stop]
-
-	return Data(X_train, Y_train), Data(X_val, Y_val)
-
 # Shuffles the data points
 def shuffle_data(data):
 	N = data.size() # Number of data points
 
 	indexes = np.random.permutation(N)
 
-	return Data(data.X[indexes], data.Y[indexes])
+	return dat.Data(data.X[indexes], data.Y[indexes])
 
 def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, layer_fun, cross_fold):
 
@@ -171,7 +145,7 @@ def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, 
 
 	for cross_iter in range(cross_fold):
 
-		data_train, data_val = split_data(data, cross_iter * cross_size, (cross_iter + 1) * cross_size)
+		data_train, data_val = dat.split_data(data, cross_iter * cross_size, (cross_iter + 1) * cross_size)
 
 		weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
 		bias = np.array(0.0, requires_grad = True) # Initial value for the bias
