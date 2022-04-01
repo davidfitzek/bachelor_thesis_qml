@@ -120,7 +120,7 @@ def main():
 
     data=load_data_iris()
 
-    #Ammount of parts the data is divided into for cross validation
+    #Amount of parts the data is divided into for cross validation
     #The runtime will be increased by a factor of this number roughly
     #if crossfold<=1 no cross validation is done
     cross_fold=5
