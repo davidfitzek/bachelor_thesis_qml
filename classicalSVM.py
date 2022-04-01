@@ -40,7 +40,7 @@ def load_data_cancer():
 def main():
     #Kernel choices:‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’
     kernel_function=['linear', 'poly', 'rbf', 'sigmoid']
-    #poly_degree is only relevant if kernel='poly' otherwise ignored
+    #Degree of poly
     poly_degree=2
 
     data=load_data_iris()
