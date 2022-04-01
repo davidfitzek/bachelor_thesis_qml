@@ -18,7 +18,8 @@ def reduceAttributeDimensions(n_dim, sample_train, sample_test):
     sample_train = minmax_scale.transform(sample_train)
     sample_test = minmax_scale.transform(sample_test)
     return sample_train, sample_test
-def reduceClassDimensions(X_raw, Y_raw, n_class):
+
+def reduceClassDimensions(X_raw, Y_raw, n_class, n_data):
     X = []
     Y = []
 
@@ -29,6 +30,6 @@ def reduceClassDimensions(X_raw, Y_raw, n_class):
             Y.append(y)
 
             cnt = cnt + 1
-            if cnt == 500:
+            if cnt == n_data:
                 break
     return X, Y
