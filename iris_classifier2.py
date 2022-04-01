@@ -64,7 +64,7 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	preds = [variational_classifier_fun(weights, feature, bias) for feature in features]
 	return com.square_loss(labels, preds)
 
-def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers):
+def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers, cross_iter):
 	optimiser = opt.NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	#optimiser = opt.AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	#optimiser = opt.GradientDescentOptimizer(stepsize = 0.01)
@@ -101,14 +101,22 @@ def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_trai
 		cost_var = float(cost(weights, bias, data.X, data.Y))
 
 		print(
-			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} | Layers: {:d} '
-			''.format(i + 1, cost_var, accuracy_train, accuracy_val, n_layers))
+			'Cross validation iteration: {:d} | Iteration: {:d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} | Layers: {:d} '
+			''.format(cross_iter + 1, i + 1, cost_var, accuracy_train, accuracy_val, n_layers))
 
 		i += 1
 
-	return [i, cost_var]
+	return [i, cost_var, float(accuracy_val)]
+	#return accuracy_val
+# Shuffles the data points
+def shuffle_data(data):
+	N = data.size() # Number of data points
 
-def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop):
+	indexes = np.random.permutation(N)
+
+	return dat.Data(data.X[indexes], data.Y[indexes])
+
+def run_variational_classifier(cross_fold, n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop):
 
 	# The device and qnode used by pennylane
 	device = qml.device("default.qubit", wires = n_qubits)
@@ -118,15 +126,28 @@ def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fu
 	def circuit(weights, x):
 		return circuit_fun(weights, x, stateprep_fun, layer_fun)
 
-	# The proportion of the data which should be use for training
-	p = 0.7
+	# Shuffle our data to introduce a random element to our train and test parts
+	data = shuffle_data(data)
 
-	data_train, data_val = dat.split_data(data, p)
+	# Compute the size of
+	N = data.size()
+	cross_size = N // cross_fold
 
-	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
-	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
+	res = []  # List for holding our accuracy results
+	iteration_res = []
+	cost_res = []
+	accuracy_res = []
 
-	return optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers)
+	for cross_iter in range(cross_fold):
+		data_train, data_val = dat.split_data(data, cross_iter * cross_size, (cross_iter + 1) * cross_size)
+
+		weights = 0.01 * np.random.randn(n_layers, n_qubits, 3, requires_grad=True)  # Initial value for the weights
+		bias = np.array(0.0, requires_grad=True)  # Initial value for the bias
+		res = optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers, cross_iter)
+		iteration_res.append(res[0])
+		cost_res.append(res[1])
+		accuracy_res.append(res[2])
+	return [iteration_res, cost_res, accuracy_res]
 
 def main():
 
@@ -138,8 +159,10 @@ def main():
 
 	# if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
 	accuracy_stop = 0.95
-	cost_stop = 1
-	iter_stop = 20
+	cost_stop = 0.8
+	iter_stop = 150
+
+	cross_fold = 10  # The amount of parts the data is divided into, =1 gives no cross validation
 
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_amplitude
@@ -154,17 +177,38 @@ def main():
 	#testing how many layers it takes to achieve accuracy_stop and cost_stop
 	iterations = [0]*range_layers
 	cost = [0]*range_layers
+	accuracy = [0]*range_layers
 	sec = [0]*range_layers
+
+	start_time = time.perf_counter()
 
 	for i in range(range_layers):
 		n_layers = i + 1
 		print("Starting with layer " + str(n_layers) + " of " + str(range_layers))
+		print(" ")
 		tic = time.perf_counter()
-		[iterations[i], cost[i]] = run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop)
+		res = run_variational_classifier(cross_fold, n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop)
 		toc = time.perf_counter()
+
+		iteration_res = res[0]
+		cost_res = res[1]
+		accuracy_res = res[2]
+
+		iterations[i] = [statistics.mean(iteration_res), statistics.stdev(iteration_res)]
+		cost[i] = [statistics.mean(cost_res), statistics.stdev(cost_res)]
+		accuracy[i] = [statistics.mean(accuracy_res), statistics.stdev(accuracy_res)]
 		sec[i] = toc - tic
 
-	print("Done!")
+		print(" ")
+		print("It took " + str(sec[i]) + " seconds"  )
+		print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(statistics.mean(accuracy_res), statistics.stdev(accuracy_res)))
+		print('Final Cost: {:0.7f} +- {:0.7f}'.format(statistics.mean(cost_res), statistics.stdev(cost_res)))
+		print(" ")
+
+	stop_time = time.perf_counter()
+	total_time = (stop_time - start_time)/3600.0
+
+	print("Done! It took " + str(total_time) + " hours to run this programme.")
 
 	with open("iterarions.csv", "w") as f:
 		write = csv.writer(f)

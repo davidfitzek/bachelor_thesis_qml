@@ -15,10 +15,15 @@ class Data:
 		return len(self.Y)
 
 # Split a data object into training and validation data
-# p is the proportion of the data which should be used for training
-def split_data(data, p):
+# start and stop are the indicies for where that validation data begins and ends
+# The rest of the data points are assumed to be training data
+def split_data(data, start, stop):
 
-	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
+	X_train = np.concatenate((data.X[ : start], data.X[stop : ]))
+	Y_train = np.concatenate((data.Y[ : start], data.Y[stop : ]))
+
+	X_val = data.X[start : stop]
+	Y_val = data.Y[start : stop]
 
 	return Data(X_train, Y_train), Data(X_val, Y_val)
 
