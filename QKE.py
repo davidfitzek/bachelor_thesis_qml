@@ -44,20 +44,19 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold):
         print("Quantum kernel classification score: %0.3f\n" %(zzpc_score))
     else:
         #Calculates accuracy with cross validation, and presents mean and standard deviation
-        scores=cross_val_score(zzpc_svc,matrix_test,label_test, cv=cross_fold)
-        print("Accuracy: %0.3f ± %0.3f, Cross_fold ammount: %0.3f" % (scores.mean(), scores.std(), cross_fold))
+        scores=cross_val_score(zzpc_svc,matrix_train,label_train, cv=cross_fold)
+        print("Accuracy: %0.3f ± %0.3f, Cross_fold ammount: %0.3f\n" % (scores.mean(), scores.std(), cross_fold))
 
 
 def main():
    
-    [sample_train, sample_test, label_train, label_test] = load_data_digits(2)
-    cross_fold=1
+    [sample_train, sample_test, label_train, label_test] = load_data_forest(500)
+    cross_fold=5
     QKE(sample_train, sample_test, label_train, label_test, cross_fold)
 
     kernel_function=['linear', 'poly', 'rbf', 'sigmoid']
     poly_degree=2
     cross_fold=5
-
     run_SVM(
         kernel_function,
         poly_degree,
