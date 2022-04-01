@@ -17,11 +17,11 @@ class Data:
 
 # Split a data object into training and validation data
 # p is the proportion of the data which should be used for training
-def split_data(data, p):
-
-	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
-
-	return Data(X_train, Y_train), Data(X_val, Y_val)
+#def split_data(data, p):
+#
+#	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
+#
+#	return Data(X_train, Y_train), Data(X_val, Y_val)
 
 # Reduces the dimension of the features based on principal component analysis
 def reduce_data(data, dim):
@@ -35,6 +35,27 @@ def reduce_data(data, dim):
 	X_red = np.array([np.array(x) for x in X_red])
 
 	return Data(X_red, data.Y)
+
+# Split a data object into training and validation data
+# start and stop are the indicies for where that validation data begins and ends
+# The rest of the data points are assumed to be training data
+def split_data(data, start, stop):
+
+	X_train = np.concatenate((data.X[ : start], data.X[stop : ]))
+	Y_train = np.concatenate((data.Y[ : start], data.Y[stop : ]))
+
+	X_val = data.X[start : stop]
+	Y_val = data.Y[start : stop]
+
+	return Data(X_train, Y_train), Data(X_val, Y_val)
+
+# Shuffles the data points
+def shuffle_data(data):
+	N = data.size() # Number of data points 
+
+	indexes = np.random.permutation(N)
+
+	return Data(data.X[indexes], data.Y[indexes])
 
 # Load the iris data set from sklearn into a data object
 def load_data_iris():

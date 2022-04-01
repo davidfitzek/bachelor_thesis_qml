@@ -11,7 +11,6 @@ import json
 
 np.random.seed(123) # Set seed for reproducibility
 
-
 # The layer for the circuit
 def layer_ex1(weights):
 	n = len(weights)
@@ -58,7 +57,7 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	preds = [variational_classifier_fun(weights, feature, bias) for feature in features]
 	return com.square_loss(labels, preds)
 
-def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
+def optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_iter):
 	optimiser = opt.NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	#optimiser = opt.AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	#optimiser = opt.GradientDescentOptimizer(stepsize = 0.01)
@@ -97,8 +96,8 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		cost_ = cost(weights, bias, data.X, data.Y)
 
 		print(
-			'Iteration: {:5d} | Cost: {:0.7f} | Accuracy training: {:0.7f} | Accuracy validation: {:0.7f} '
-			''.format(i + 1, cost_, accuracy_train, accuracy_val)
+			'Cross validation iteration: {:5d} | Iteration: {:5d} | Cost: {:0.7f} | Accuracy training: {:0.7f} | Accuracy validation: {:0.7f}'
+			''.format(cross_iter + 1, i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
 		)
 
 		costs.append(float(cost_))
@@ -111,53 +110,79 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit):
 		'acc_val': acc_val
 	}
 
-	with open('data/test.json', 'w') as f:
-		json.dump(doc, f)
+	return doc
 
-def run_variational_classifier(n_qubits, n_layers, data, stateprep_fun, layer_fun):
+def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, layer_fun, cross_fold):
 
-	# The device and qnode used by pennylane
+	# The device dused by pennylane
 	device = qml.device("default.qubit", wires = n_qubits)
-
+		
 	# Circuit function used by pennylane
 	@qml.qnode(device)
 	def circuit(weights, x):
 		return circuit_fun(weights, x, stateprep_fun, layer_fun)
 
-	# The proportion of the data which should be use for training
-	p = 0.7
+	# Shuffle our data to introduce a random element to our train and test parts
+	data = dat.shuffle_data(data)
 
-	data_train, data_val = dat.split_data(data, p)
+	# Compute the size of 
+	N = data.size()
+	cross_size = N // cross_fold
 
-	n_iter = 200 # Number of iterations, should be changed to a tolerance based process instead
+	res = {} # dictionary for holding our accuracy results
 
-	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
-	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
+	for cross_iter in range(cross_fold):
+			
+		data_train, data_val = dat.split_data(data, cross_iter * cross_size, (cross_iter + 1) * cross_size)
+		
+		weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
+		bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
-	optimise(n_iter, weights, bias, data, data_train, data_val, circuit)
+		res['cross iter' + str(cross_iter + 1)] = optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_iter)
+
+	return res
 
 def main():
-	
-	n_qubits = 2
+
+	n_iter = 2 # Number of iterations, should be changed to a tolerance based process instead
+	cross_fold = 2 # The ammount of parts the data is divided into, 1 gives no cross validation
+
+	n_qubits = 4
 	n_layers = 4
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_fun = stateprep_amplitude
+	stateprep_fun = stateprep_angle
 
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
-	# Load the iris data
-	data = dat.load_data_adhoc(dimensions = 2)
+	# Load the data set
+	data = dat.load_data_iris()
 	#data = dat.reduce_data(data, n_qubits)
 
-	run_variational_classifier(
+	res = run_variational_classifier(
+		n_iter,
 		n_qubits,
 		n_layers,
 		data,
 		stateprep_fun,
-		layer_fun
+		layer_fun,
+		cross_fold
 	)
+	
+	# Dump data
+	dump_file = 'data/test.json'
+	with open(dump_file, 'w') as f:
+		json.dump(res, f)
+		print('Dumped data to ' + dump_file)
+
+	# Compute some statistics with the accuracies
+	final_acc = [val['acc_val'][-1] for key, val in res.items()]
+
+	mean = sum(final_acc) / len(final_acc)
+	stddev = float(np.sqrt(sum((acc - mean) ** 2 for acc in final_acc)))
+
+	print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(mean, stddev))
 
 if __name__ == '__main__':
 	main()
