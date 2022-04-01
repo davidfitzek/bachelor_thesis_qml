@@ -105,3 +105,9 @@ for k in classical_kernels:
     classical_svc.fit(sample_train, label_train)
     classical_score = classical_svc.score(sample_test, label_test)
     print('%s kernel classification score: %0.5f' % (k, classical_score))
+
+def main():
+    print('Hello')
+
+if __name__ == '__main__':
+    main()
