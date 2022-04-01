@@ -12,8 +12,8 @@ from QKE_functions import *
 from classicalSVM import *
 from data import *
 
-def QKE(sample_train, sample_test, label_train, label_test, cross_fold):
-    zz_map = ZZFeatureMap(feature_dimension=4, reps = 1, entanglement="linear", insert_barriers=True)
+def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_dimension):
+    zz_map = ZZFeatureMap(feature_dimension, reps = 1, entanglement="linear", insert_barriers=True)
     zz_kernel = QuantumKernel(feature_map=zz_map, quantum_instance=Aer.get_backend('statevector_simulator'))
     zz_circuit = zz_kernel.construct_circuit(sample_train[0], sample_train[1])
     zz_circuit.decompose().decompose().draw(output='mpl')
@@ -41,27 +41,35 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold):
         zzpc_svc.fit(matrix_train, label_train)
         zzpc_score = zzpc_svc.score(matrix_test, label_test)
 
-        print("Quantum kernel classification score: %0.3f\n" %(zzpc_score))
+        print("QKE accuracy: %0.3f\n" %(zzpc_score))
     else:
         #Calculates accuracy with cross validation, and presents mean and standard deviation
         scores=cross_val_score(zzpc_svc,matrix_train,label_train, cv=cross_fold)
-        print("Accuracy: %0.3f ± %0.3f, Cross_fold ammount: %0.3f\n" % (scores.mean(), scores.std(), cross_fold))
+        print("QKE accuracy: %0.3f ± %0.3f, Cross_fold ammount: %0.3f\n" % (scores.mean(), scores.std(), cross_fold))
 
 
 def main():
    
-    [sample_train, sample_test, label_train, label_test] = load_data_forest(500)
-    cross_fold=5
-    QKE(sample_train, sample_test, label_train, label_test, cross_fold)
+    n_classes = 2
+    n_attributes = 4
+    n_data = 1000
+    adhoc_dimension = 2
+
+    #[sample_train, sample_test, label_train, label_test] = load_data_adhoc(50, adhoc_dimension)
+    [sample_train, sample_test, label_train, label_test] = load_data_breast(n_attributes)
+
+    cross_fold_QKE=5
+
+    QKE(sample_train, sample_test, label_train, label_test, cross_fold_QKE, n_attributes)
 
     kernel_function=['linear', 'poly', 'rbf', 'sigmoid']
     poly_degree=2
-    cross_fold=5
+    cross_fold_classical=5
     run_SVM(
         kernel_function,
         poly_degree,
         [sample_train, sample_test, label_train, label_test],
-        cross_fold
+        cross_fold_classical
     )
 
 if __name__ == '__main__':
