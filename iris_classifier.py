@@ -7,6 +7,7 @@ import pennylane.optimize as opt
 import common as com
 import data as dat
 
+import statistics as stat
 import json
 
 np.random.seed(123) # Set seed for reproducibility
@@ -131,12 +132,12 @@ def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, 
 
 	res = {} # dictionary for holding our accuracy results
 
+	weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
+	bias = np.array(0.0, requires_grad = True) # Initial value for the bias
+
 	for cross_iter in range(cross_fold):
 			
 		data_train, data_val = dat.split_data(data, cross_iter * cross_size, (cross_iter + 1) * cross_size)
-		
-		weights = 0.01 * np.random.randn(n_layers , n_qubits, 3, requires_grad = True) # Initial value for the weights
-		bias = np.array(0.0, requires_grad = True) # Initial value for the bias
 
 		res['cross iter' + str(cross_iter + 1)] = optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_iter)
 
@@ -179,10 +180,10 @@ def main():
 	# Compute some statistics with the accuracies
 	final_acc = [val['acc_val'][-1] for key, val in res.items()]
 
-	mean = sum(final_acc) / len(final_acc)
-	stddev = float(np.sqrt(sum((acc - mean) ** 2 for acc in final_acc)))
+	mean = stat.mean(final_acc)
+	stdev = stat.stdev(final_acc, xbar = mean)
 
-	print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(mean, stddev))
+	print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(mean, stdev))
 
 if __name__ == '__main__':
 	main()
