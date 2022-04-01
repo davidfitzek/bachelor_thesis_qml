@@ -121,7 +121,7 @@ def load_data_forest():
 	# Might be replaced with a random sample instead
 
 	# In the forest data elements can be of type 1 to 7
-	# We only log at type 1 and type 2
+	# We only look at type 1 and type 2
 	cnt = 0
 	for x, y in zip(X_raw, Y_raw):
 		if y < 3:
