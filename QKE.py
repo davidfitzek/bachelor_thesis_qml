@@ -22,7 +22,7 @@ def load_data_forest():
     data = forest
     X_raw = data.data
     Y_raw = data.target
-    [X, Y] = reduceClassDimensions(X_raw, Y_raw, 3)
+    [X, Y] = reduceClassDimensions(X_raw, Y_raw, 3, 500)
 
     forest_sample_train, forest_sample_test, forest_label_train, forest_label_test = train_test_split(
         X, Y, test_size=0.3, random_state=22)
@@ -37,7 +37,7 @@ def load_data_iris():
     data = iris
     X_raw = data.data
     Y_raw = data.target
-    [X, Y] = reduceClassDimensions(X_raw, Y_raw, 2)
+    [X, Y] = reduceClassDimensions(X_raw, Y_raw, 2, 100)
 
     iris_sample_train, iris_sample_test, iris_label_train, iris_label_test = train_test_split(
         X, Y, test_size=0.3, random_state=22)
@@ -50,6 +50,7 @@ def load_data_breast():
 
     breast_sample_train, breast_sample_test, breast_label_train, breast_label_test = train_test_split(
         breast.data, breast.target, test_size=0.3, random_state=22)
+
     [breast_sample_train, breast_sample_test] = reduceAttributeDimensions(4, breast_sample_train, breast_sample_test)
     return breast_sample_train, breast_sample_test, breast_label_train, breast_label_test
 
@@ -59,6 +60,7 @@ def load_data_digits(n_class_digits):
 
     digits_sample_train, digits_sample_test, digits_label_train, digits_label_test = train_test_split(
         digits.data, digits.target, test_size=0.2, random_state=22)
+        
     [digits_sample_train, digits_sample_test] = reduceAttributeDimensions(4, digits_sample_train, digits_sample_test)
 
     return digits_sample_train, digits_sample_test, digits_label_train, digits_label_test
