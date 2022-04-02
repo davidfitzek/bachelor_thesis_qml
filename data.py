@@ -25,7 +25,10 @@ def load_data_forest(n_data, n_attributes):
     return forest_sample_train, forest_sample_test, forest_label_train, forest_label_test
 
 def load_data_iris(n_data):
-    
+    '''
+    Loads the dataset iris with length n_data and returns four datasets
+    [iris_sample_train, iris_sample_test, iris_label_train, iris_label_test]
+    '''
     iris = datasets.load_iris()
     data = iris
     X_raw = data.data
@@ -44,6 +47,10 @@ def load_data_iris(n_data):
     return iris_sample_train, iris_sample_test, iris_label_train, iris_label_test
 
 def load_data_breast(n_attributes):
+    '''
+    Loads the dataset breast_cancer and returns four datasets
+    [breast_sample_train, breast_sample_test, breast_label_train, breast_label_test]
+    '''
     breast = datasets.load_breast_cancer()
 
     #Split the dataset into training- and testset 
@@ -56,6 +63,10 @@ def load_data_breast(n_attributes):
     return breast_sample_train, breast_sample_test, breast_label_train, breast_label_test
 
 def load_data_digits(n_class_digits, n_attributes):
+    '''
+    Loads the dataset digits with n_class_digits digits and returns four datasets
+    [breast_sample_train, breast_sample_test, breast_label_train, breast_label_test]
+    '''
     digits = datasets.load_digits(n_class=n_class_digits)
 
     #Split the dataset into training- and testset 
