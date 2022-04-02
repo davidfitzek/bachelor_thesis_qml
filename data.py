@@ -4,6 +4,10 @@ from qiskit_machine_learning.datasets import ad_hoc_data
 from QKE_functions import *
 
 def load_data_forest(n_data, n_attributes):
+    '''
+    Loads the dataset forest with length n_data and returns four datasets
+    [iris_sample_train, iris_sample_test, iris_label_train, iris_label_test]
+    '''
     forest = datasets.fetch_covtype()
     data = forest
     X_raw = data.data
