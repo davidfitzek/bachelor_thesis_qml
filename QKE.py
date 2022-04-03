@@ -20,37 +20,35 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_
         map = ZFeatureMap(feature_dimension, reps, insert_barriers=True)
 
     kernel = QuantumKernel(feature_map=map, quantum_instance=Aer.get_backend('statevector_simulator'))
-    circuit = kernel.construct_circuit(sample_train[0], sample_train[1])
-
-    #
-    backend = Aer.get_backend('qasm_simulator')
-
-    #Executing the quantum circuit
-    job = execute(circuit, backend, shots = 8192, seed_simulator=1024, seed_transpiler=1024)
-    counts = job.result().get_counts(circuit)
-    plot_histogram(counts)
     
     matrix_train = kernel.evaluate(x_vec=sample_train)
     matrix_test = kernel.evaluate(x_vec=sample_test, y_vec=sample_train)
 
-    #Plot the circuit and kernel matrix 
+    zzpc_svc = SVC(kernel='precomputed') #Uses the precomputed kernel and calculates the SVM
+    
+
+    #Plot the probabilites for the quantum states, circuit and kernel matrix 
+    plot_probabilities(sample_train, kernel)
     plot_kernel(matrix_train, matrix_test)
-    plot_curcuit(circuit)
+    plot_curcuit(sample_train, kernel)
     #plt.show()
-
-    zzpc_svc = SVC(kernel='precomputed')
-
     if cross_fold<=1:
         #Calculates accuracy without cross validation
         zzpc_svc.fit(matrix_train, label_train)
         zzpc_score = zzpc_svc.score(matrix_test, label_test)
-
         print("QKE accuracy: %0.3f\n" %(zzpc_score))
     else:
         #Calculates accuracy with cross validation, and presents mean and standard deviation
         scores=cross_val_score(zzpc_svc,matrix_train,label_train, cv=cross_fold)
         print("QKE accuracy: %0.3f ± %0.3f, Cross_fold ammount: %0.1f\n" % (scores.mean(), scores.std(), cross_fold))
 
+
+def plot_probabilities(sample_train, kernel):
+    circuit = kernel.construct_circuit(sample_train[0], sample_train[1])
+    job = execute(circuit, Aer.get_backend('qasm_simulator'), shots = 8192, seed_simulator=1024, seed_transpiler=1024)
+    counts = job.result().get_counts(circuit)
+    plot_histogram(counts)
+    
 
 def plot_kernel(matrix_train, matrix_test):
     fig, axs = plt.subplots(1,2,figsize=(10, 5))
@@ -61,7 +59,8 @@ def plot_kernel(matrix_train, matrix_test):
                     interpolation='nearest', origin='upper', cmap='Reds')
     axs[1].set_title("Testing kernel matrix")
 
-def plot_curcuit(circuit):
+def plot_curcuit(sample_train, kernel):
+    circuit = kernel.construct_circuit(sample_train[0], sample_train[1])
     circuit.decompose().decompose().draw(output='mpl')
 
 def main():
