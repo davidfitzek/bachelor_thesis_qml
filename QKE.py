@@ -17,7 +17,9 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_
     if map_type == 'zz':
         map = ZZFeatureMap(feature_dimension, reps, entanglement="linear", insert_barriers=True)
     else:
-        map = ZFeatureMap(feature_dimension, reps, insert_barriers=True)
+        map = PauliFeatureMap(feature_dimension, reps=reps, paulis=['Z', 'Y', 'ZZ'])
+        #map = RealAmplitudes(feature_dimension, entanglement="full", reps=2, insert_barriers=True)
+        #map = ZFeatureMap(feature_dimension, reps, insert_barriers=True)
 
     kernel = QuantumKernel(feature_map=map, quantum_instance=Aer.get_backend('statevector_simulator'))
     
@@ -64,7 +66,7 @@ def plot_curcuit(sample_train, kernel):
     circuit.decompose().decompose().draw(output='mpl')
 
 def main():
-    n_attributes = 4
+    n_attributes = 15
     n_data = 150
     #'z' is a z feature map 
     #'zz' is a higher order zz feature map 
