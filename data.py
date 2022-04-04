@@ -151,4 +151,7 @@ def load_data_adhoc(dimensions = 2, size = 500, gap = 0.3):
 	Y = np.array([y[0] for y in Y]) # Y has two columns although these columns are either [0, 1] or [1, 0] so we can discard the second dimension
 	X = np.array([np.array(x) for x in X], requires_grad = False)
 
+	# Scale and translate Y from 0 and 1 to -1 and 1
+	y = 2 * Y - 1
+
 	return Data(X, Y)
