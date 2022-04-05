@@ -9,6 +9,8 @@ import pennylane.optimize as opt
 import common as com
 import data as dat
 
+import matplotlib.pyplot as plt
+
 import time
 
 import csv
@@ -161,12 +163,12 @@ def main():
 	layer_fun = layer_ex1
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_name = ["Amplitude"] #descriptive name
-	stateprep_array = [stateprep_amplitude]
+	stateprep_name = ["Angle"] #descriptive name
+	stateprep_array = [stateprep_angle]
 
 	# Load data
-	data_name = ["Iris", "CANCER"] #descriptive name
-	data_array = [dat.load_data_iris(), dat.load_data_cancer()]
+	data_name = ["Adhoc"] #descriptive named
+	data_array = [dat.load_data_adhoc()]
 
 	start_time = time.perf_counter()
 
@@ -177,7 +179,7 @@ def main():
 
 		#Corresponds to the first stateprep encoding in stateprep_array
 		if which_stateprep == 0: #Kind of ugly way to do it but I do not know of a better one
-			qubit_array = [2, 5]
+			qubit_array = [2]
 
 		#Tests every dataset
 		for which_data in range(len(data_array)):
@@ -227,10 +229,27 @@ def main():
 
 				write.writerow(sec)
 
+#			plt.subplot(3, 1, 1)
+#			plt.plot(iterations)
+#			plt.xlabel("Layer")
+#			plt.ylabel("Iterations")
+#
+#			plt.subplot(3, 1, 2)
+#			plt.plot(cost)
+#			plt.xlabel("Layer")
+#			plt.ylabel("Cost")
+#
+#			plt.subplot(3, 1, 3)
+#			plt.plot(sec)
+#			plt.xlabel("Layer")
+#			plt.ylabel("Seconds to execute")
+#
+#			plt.show()
+
 	stop_time = time.perf_counter()
 	total_time = (stop_time - start_time) / 3600.0
 
 	print("Done! It took " + str(total_time) + " hours to run this programme.")
 
 if __name__ == '__main__':
-	main()
+    main()
