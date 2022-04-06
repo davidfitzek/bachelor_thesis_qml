@@ -76,11 +76,9 @@ def main():
     reps = 2 #Repitition of layers in feature map
 
     #Loading data from data.py file
-    [sample_train, sample_test, label_train, label_test] = load_data_iris(n_data)
-    
-    
-    cross_fold_QKE=5
+    [sample_train, sample_test, label_train, label_test] = load_data_breast(n_attributes=4, n_data = 150)
 
+    cross_fold_QKE=5
 
     QKE(sample_train, sample_test, label_train, label_test, cross_fold_QKE, n_attributes, map_type, reps)
 
