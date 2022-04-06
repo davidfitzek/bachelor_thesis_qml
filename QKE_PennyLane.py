@@ -4,7 +4,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 import pennylane as qml
 from pennylane import numpy as np
-from pennylane.templates import AngleEmbedding, BasisEmbedding, AmplitudeEmbedding
+from pennylane.templates import AngleEmbedding, BasisEmbedding, AmplitudeEmbedding, IQPEmbedding
 from data import *
 from QKE_functions import *
 from classicalSVM import *
@@ -13,7 +13,7 @@ from classicalSVM import *
 # angle, n attributes = 4, n_data = 150: 0.952, cross = 5
 
 #Choose kernelfunction: [kernel_angle, kernel_basis, kernel_amplitude]
-kernel_name = 'kernel_angle'
+kernel_name = 'kernel_angle_homemade'
 #Amount of features used for the dataset
 n_features = 4
 #If amplitude encoding, n_qubits = log_2(n_features)
@@ -41,6 +41,14 @@ def kernel_basis(x, y):
     return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
 
 @qml.qnode(dev)
+def kernel_IQP(x, y):
+    """Kernel function with IQP encoding. This circuit will encode N 
+        input data into N qubits. Input data can only be floatnumbers."""
+    IQPEmbedding(x, wires=range(n_wires))
+    qml.adjoint(IQPEmbedding)(y, wires=range(n_wires))
+    return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
+
+@qml.qnode(dev)
 def kernel_amplitude(x, y):
     """Kernel function with amplitude encoding. This circuit will encode the 
         N-dimensional input data into the amplitudes of log(N) qubits.
@@ -49,6 +57,31 @@ def kernel_amplitude(x, y):
     qml.adjoint(AmplitudeEmbedding)(y, wires=range(n_wires), normalize=True)
     return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
 
+@qml.qnode(dev)
+def featuremap_angle(x):
+    wires = range(n_wires)
+    for i in wires:
+        qml.Hadamard(wires=[i])
+        qml.RY(x[i], wires=[i])
+    return qml.expval(qml.PauliZ(0))
+
+@qml.qnode(dev)
+def kernel_angle_homemade(x, y):
+    wires = range(n_wires)
+    for i in wires:
+        qml.Hadamard(wires=[i])
+        qml.RZ(x[i], wires=[i])
+    for i in wires:
+        qml.RZ(y[i], wires=[i])
+        qml.Hadamard(wires=[i])
+    return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
+'''
+@qml.qnode(dev)
+def kernel_angle_homemade(x ,y):
+    featuremap_angle(x)
+    qml.adjoint(featuremap_angle)(y)
+    return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
+'''
 
 def kernel_matrix(A, B, kernel_function):
     """Compute the matrix whose entries are the kernel
@@ -56,29 +89,36 @@ def kernel_matrix(A, B, kernel_function):
     return np.array([[kernel_function(a, b) for b in B] for a in A])
 
 def main():
-
+    
     #Load the data
     #load_data_adhoc(150, 2)
     #load_data_breast(n_attributes=n_features, n_data = 150)
     #load_data_iris(150)
     #load_data
 
-    [sample_train, sample_test, label_train, label_test] = load_data_breast(n_attributes=4, n_data = 150)
+    [sample_train, sample_test, label_train, label_test] = load_data_iris(100)
+
+    #print(qml.draw(featuremap_angle)(sample_train, sample_test))
 
     #Scale the data
     [sample_train, sample_test] = scale(sample_train, sample_test, -1, 1)
+    [sample_train, sample_test] = normalise(sample_train, sample_test)
 
     if kernel_name == 'kernel_angle':
         kernel_function =  kernel_angle
     elif kernel_name == 'kernel_basis':
         kernel_function =  kernel_basis
+    elif kernel_name == 'kernel_IQP':
+        kernel_function = kernel_IQP
+    elif kernel_name == 'kernel_angle_homemade':
+        kernel_function = kernel_angle_homemade
     else:
         kernel_function =  kernel_amplitude
 
     #Amount of parts the data is divided into for cross validation
     #The runtime will be increased by a factor of this number roughly
     #if crossfold<=1 no cross validation is done
-    cross_fold = 5
+    cross_fold = 1
 
     #Calculate the kernel matrices
     matrix_train = kernel_matrix(sample_train, sample_train, kernel_function)

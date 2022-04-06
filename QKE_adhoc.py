@@ -24,10 +24,10 @@ from qiskit_machine_learning.algorithms import QSVC
 seed = 12345
 algorithm_globals.random_seed = seed
 
-adhoc_dimension = 2
+adhoc_dimension = 3
 train_features, train_labels, test_features, test_labels, adhoc_total = ad_hoc_data(
-    training_size=20,
-    test_size=5,
+    training_size=200,
+    test_size=50,
     n=adhoc_dimension,
     gap=0.3,
     plot_data=False,
@@ -43,12 +43,6 @@ adhoc_backend = QuantumInstance(
 
 adhoc_kernel = QuantumKernel(feature_map=adhoc_feature_map, quantum_instance=adhoc_backend)
 
-adhoc_svc = SVC(kernel=adhoc_kernel.evaluate)
-adhoc_svc.fit(train_features, train_labels)
-adhoc_score = adhoc_svc.score(test_features, test_labels)
-
-print(f"Callable kernel classification test score: {adhoc_score}")
-
 adhoc_matrix_train = adhoc_kernel.evaluate(x_vec=train_features)
 adhoc_matrix_test = adhoc_kernel.evaluate(x_vec=test_features, y_vec=train_features)
 
@@ -56,13 +50,8 @@ adhoc_svc = SVC(kernel="precomputed")
 adhoc_svc.fit(adhoc_matrix_train, train_labels)
 adhoc_score = adhoc_svc.score(adhoc_matrix_test, test_labels)
 
-print(f"Precomputed kernel classification test score: {adhoc_score}")
 
-qsvc = QSVC(quantum_kernel=adhoc_kernel)
-qsvc.fit(train_features, train_labels)
-qsvc_score = qsvc.score(test_features, test_labels)
-
-print(f"QSVC classification test score: {qsvc_score}")
+print("Precomputed kernel classification test score: %0.3f" % (adhoc_score))
 
 classical_kernels = ['linear', 'poly', 'rbf', 'sigmoid']
 
@@ -71,3 +60,18 @@ for k in classical_kernels:
     classical_svc.fit(train_features, train_labels)
     classical_score = classical_svc.score(test_features, test_labels)
     print('%s kernel classification score: %0.5f' % (k, classical_score))
+
+'''
+adhoc_svc = SVC(kernel=adhoc_kernel.evaluate)
+adhoc_svc.fit(train_features, train_labels)
+adhoc_score = adhoc_svc.score(test_features, test_labels)
+
+print(f"Callable kernel classification test score: {adhoc_score}")
+
+
+qsvc = QSVC(quantum_kernel=adhoc_kernel)
+qsvc.fit(train_features, train_labels)
+qsvc_score = qsvc.score(test_features, test_labels)
+
+print(f"QSVC classification test score: {qsvc_score}")
+'''
