@@ -50,17 +50,26 @@ def load_data_iris(n_data):
 
     return iris_sample_train, iris_sample_test, iris_label_train, iris_label_test
 
-def load_data_breast(n_attributes):
+def load_data_breast(n_attributes, n_data):
     '''
     Loads the dataset breast_cancer and returns four datasets
     [breast_sample_train, breast_sample_test, breast_label_train, breast_label_test]
     '''
     breast = datasets.load_breast_cancer()
+    data = breast
+    X_raw = data.data
+    Y_raw = data.target
+    #The forest dataset has classes from (0-2), by setting 
+    #n_classes = 1, we only look at 0 and 1.
+    n_classes = 1
 
+    #Reduces the amount of classes
+    [X, Y] = reduceClassDimensions(X_raw, Y_raw, n_classes, n_data)
+    
     #Split the dataset into training- and testset 
     #for the sample and label.
     breast_sample_train, breast_sample_test, breast_label_train, breast_label_test = train_test_split(
-        breast.data, breast.target, test_size=0.3, random_state=22)
+        X, Y, test_size=0.3, random_state=22)
     #Reduces the amount of attrubutes/features.
     [breast_sample_train, breast_sample_test] = reduceAttributeDimensions(n_attributes, breast_sample_train, breast_sample_test)
 
