@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from numpy import not_equal
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 import pennylane as qml
@@ -6,37 +7,46 @@ from pennylane import numpy as np
 from pennylane.templates import AngleEmbedding, BasisEmbedding, AmplitudeEmbedding
 from data import *
 from QKE_functions import *
+from classicalSVM import *
 
+# amplitude, n attributes = 8, n_data = 150: 0.933, cross = 2 
+# angle, n attributes = 4, n_data = 150: 0.952, cross = 5
+
+#Choose kernelfunction: [kernel_angle, kernel_basis, kernel_amplitude]
+kernel_name = 'kernel_angle'
+#Amount of features used for the dataset
 n_features = 4
-n_qubits = np.int64(np.ceil(np.log2(n_features)))
-n_qubits = 4
+#If amplitude encoding, n_qubits > log_2(n_features)
+n_qubits = np.int64(np.ceil(np.log2(n_features))) if kernel_name == 'kernel_amplitude' else n_features
 n_wires = n_qubits
-
-dev = qml.device("default.qubit", wires = n_wires)
-
+#Create the zero projector
 projector = np.zeros((2**n_qubits, 2**n_qubits))
 projector[0, 0] = 1
 
+dev = qml.device("default.qubit", wires = n_wires)
 @qml.qnode(dev)
 def kernel_angle(x, y):
-    wires = n_qubits
-    AngleEmbedding(x, wires=range(wires))
-    qml.adjoint(AngleEmbedding)(y, wires=range(wires))
-    return qml.expval(qml.Hermitian(projector, wires=range(wires)))
+    """Compute the matrix whose entries are the kernel
+       evaluated on pairwise data from sets A and B."""
+    AngleEmbedding(x, wires=range(n_wires))
+    qml.adjoint(AngleEmbedding)(y, wires=range(n_wires))
+    return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
 
 @qml.qnode(dev)
 def kernel_basis(x, y):
-    wires = n_qubits
-    BasisEmbedding(x, wires=range(wires))
-    qml.adjoint(BasisEmbedding)(y, wires=range(wires))
-    return qml.expval(qml.Hermitian(projector, wires=range(wires)))
+    """Compute the matrix whose entries are the kernel
+       evaluated on pairwise data from sets A and B."""
+    BasisEmbedding(x, wires=range(n_wires))
+    qml.adjoint(BasisEmbedding)(y, wires=range(n_wires))
+    return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
 
 @qml.qnode(dev)
 def kernel_amplitude(x, y):
-    wires = n_qubits
-    AmplitudeEmbedding(x, wires=range(wires), normalize=True)
-    qml.adjoint(AmplitudeEmbedding)(y, wires=range(wires), normalize=True)
-    return qml.expval(qml.Hermitian(projector, wires=range(wires)))
+    """Compute the matrix whose entries are the kernel
+       evaluated on pairwise data from sets A and B."""
+    AmplitudeEmbedding(x, wires=range(n_wires), normalize=True)
+    qml.adjoint(AmplitudeEmbedding)(y, wires=range(n_wires), normalize=True)
+    return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
 
 
 def kernel_matrix(A, B, kernel_function):
@@ -45,23 +55,31 @@ def kernel_matrix(A, B, kernel_function):
     return np.array([[kernel_function(a, b) for b in B] for a in A])
 
 def main():
-
-    n_data = 100
-
-    cross_fold = 2
-
-    kernel_function = kernel_angle
-
-    [sample_train, sample_test, label_train, label_test] = load_data_forest(n_data, n_attributes = 4)
+    #Choose the amount of features in your data
+    n_features = 4
+    #Load the data
+    [sample_train, sample_test, label_train, label_test] = load_data_breast(n_attributes=n_features, n_data = 150)
     
-    #print(sample_train, label_train)
-
-    #[sample_train, sample_test] = normalise(sample_train, sample_test)
+    #Scale the data
     [sample_train, sample_test] = scale(sample_train, sample_test, -1, 1)
 
+    if kernel_name == 'kernel_angle':
+        kernel_function =  kernel_angle
+    elif kernel_name == 'kernel_basis':
+        kernel_function =  kernel_basis
+    else:
+        kernel_function =  kernel_amplitude
+
+    #Amount of parts the data is divided into for cross validation
+    #The runtime will be increased by a factor of this number roughly
+    #if crossfold<=1 no cross validation is done
+    cross_fold = 5
+
+    #Calculate the kernel matrices
     matrix_train = kernel_matrix(sample_train, sample_train, kernel_function)
     matrix_test = kernel_matrix(sample_test, sample_train, kernel_function)
 
+    #Calculate the SVM classically with the Quantum Kernel
     qsvm = SVC(kernel='precomputed')
 
     if cross_fold<=1:
@@ -73,6 +91,19 @@ def main():
         #Calculates accuracy with cross validation, and presents mean and standard deviation
         scores_cross=cross_val_score(qsvm,matrix_train,label_train, cv=cross_fold)
         print("QKE accuracy: %0.3f ± %0.3f, Cross_fold ammount: %0.1f\n" % (scores_cross.mean(), scores_cross.std(), cross_fold))
+
+
+    #Print the classical results
+    kernel_function=['linear', 'poly', 'rbf', 'sigmoid']
+    poly_degree=2
+    #Cross_fold for classical SVM
+    cross_fold_classical=5
+    run_SVM(
+        kernel_function,
+        poly_degree,
+        [sample_train, sample_test, label_train, label_test],
+        cross_fold_classical
+    )
 
 if __name__ == '__main__':
     main()
