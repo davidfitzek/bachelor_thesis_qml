@@ -1,3 +1,4 @@
+from random import sample
 from traceback import print_tb
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, minmax_scale
@@ -11,12 +12,25 @@ def reduceAttributeDimensions(n_dim, sample_train, sample_test):
     sample_train = pca.transform(sample_train)
     sample_test = pca.transform(sample_test)
     # Normalise the data
+    normalise(sample_train, sample_test)
+
+    # Scale the data to (-1, 1)
+    scale(sample_train, sample_test, -1, 1)
+
+    return sample_train, sample_test
+
+def normalise(sample_train, sample_test):
+    # Normalise the data
     std_scale = StandardScaler().fit(sample_train)
     sample_train = std_scale.transform(sample_train)
     sample_test = std_scale.transform(sample_test)
-    # Scale the data to (-1, 1)
+
+    return sample_train, sample_test
+
+def scale(sample_train, sample_test, min, max):
+    # Normalise the data
     digits_samples = np.append(sample_train, sample_test, axis=0)
-    minmax_scale = MinMaxScaler((-1, 1)).fit(digits_samples)
+    minmax_scale = MinMaxScaler((min, max)).fit(digits_samples)
     sample_train = minmax_scale.transform(sample_train)
     sample_test = minmax_scale.transform(sample_test)
 
