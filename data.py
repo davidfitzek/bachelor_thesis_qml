@@ -1,6 +1,6 @@
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from qiskit_machine_learning.datasets import ad_hoc_data
+from qiskit_machine_learning.datasets import ad_hoc_data, sample_ad_hoc_data
 from QKE_functions import *
 
 def load_data_forest(n_data, n_attributes):
@@ -93,13 +93,13 @@ def load_data_digits(n_class_digits, n_attributes):
 
 def load_data_adhoc (n_data, adhoc_dimension):
     
-    adhoc_sample_train, adhoc_sample_test, adhoc_label_train, adhoc_label_test, total = ad_hoc_data(
+    adhoc_sample_train, adhoc_sample_test, adhoc_label_train, adhoc_label_test = ad_hoc_data(
     training_size=int(n_data*0.7),
     test_size=int(n_data*0.3),
     n=adhoc_dimension,
     gap=0.3,
     plot_data=False,
     one_hot=False,
-    include_sample_total=True,
+    include_sample_total=False,
     )
-    return adhoc_sample_train, adhoc_sample_test, adhoc_label_train, adhoc_label_test
+    return adhoc_sample_train, adhoc_label_train, adhoc_sample_test, adhoc_label_test

@@ -5,7 +5,7 @@ from data import *
 def run_SVM(kernel_function,poly_degree,data,cross_fold):
     [sample_train, sample_test, label_train, label_test] = data
     for k in kernel_function:
-        clf = SVC(kernel=k,degree=poly_degree,gamma='scale')
+        clf = SVC(kernel=k,degree=poly_degree,gamma='scale', random_state=0)
         if cross_fold<=1:
             #Calculates accuracy without cross validation
             clf.fit(sample_train, label_train)
@@ -28,7 +28,7 @@ def main():
 
     poly_degree=2
 
-    data=load_data_iris(100)
+    data=load_data_breast(20, 570)
 
     #Amount of parts the data is divided into for cross validation
     #The runtime will be increased by a factor of this number roughly
