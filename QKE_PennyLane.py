@@ -26,24 +26,25 @@ projector[0, 0] = 1
 dev = qml.device("default.qubit", wires = n_wires)
 @qml.qnode(dev)
 def kernel_angle(x, y):
-    """Compute the matrix whose entries are the kernel
-       evaluated on pairwise data from sets A and B."""
+    """Kernel function with angle encoding. This circuit will rotate the 
+        N-dimensional input data into N qubits. Input data can be floatnumbers."""
     AngleEmbedding(x, wires=range(n_wires))
     qml.adjoint(AngleEmbedding)(y, wires=range(n_wires))
     return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
 
 @qml.qnode(dev)
 def kernel_basis(x, y):
-    """Compute the matrix whose entries are the kernel
-       evaluated on pairwise data from sets A and B."""
+    """Kernel function with basis encoding. This circuit will encode N 
+        input data into N qubits. Input data can only be 0 or 1"""
     BasisEmbedding(x, wires=range(n_wires))
     qml.adjoint(BasisEmbedding)(y, wires=range(n_wires))
     return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
 
 @qml.qnode(dev)
 def kernel_amplitude(x, y):
-    """Compute the matrix whose entries are the kernel
-       evaluated on pairwise data from sets A and B."""
+    """Kernel function with amplitude encoding. This circuit will encode the 
+        N-dimensional input data into the amplitudes of log(N) qubits.
+        Input data can be floatnumbers."""
     AmplitudeEmbedding(x, wires=range(n_wires), normalize=True)
     qml.adjoint(AmplitudeEmbedding)(y, wires=range(n_wires), normalize=True)
     return qml.expval(qml.Hermitian(projector, wires=range(n_wires)))
