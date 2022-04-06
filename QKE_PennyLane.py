@@ -16,7 +16,7 @@ from classicalSVM import *
 kernel_name = 'kernel_angle'
 #Amount of features used for the dataset
 n_features = 4
-#If amplitude encoding, n_qubits > log_2(n_features)
+#If amplitude encoding, n_qubits = log_2(n_features)
 n_qubits = np.int64(np.ceil(np.log2(n_features))) if kernel_name == 'kernel_amplitude' else n_features
 n_wires = n_qubits
 #Create the zero projector
@@ -56,11 +56,15 @@ def kernel_matrix(A, B, kernel_function):
     return np.array([[kernel_function(a, b) for b in B] for a in A])
 
 def main():
-    #Choose the amount of features in your data
-    n_features = 4
+
     #Load the data
-    [sample_train, sample_test, label_train, label_test] = load_data_breast(n_attributes=n_features, n_data = 150)
-    
+    #load_data_adhoc(150, 2)
+    #load_data_breast(n_attributes=n_features, n_data = 150)
+    #load_data_iris(150)
+    #load_data
+
+    [sample_train, sample_test, label_train, label_test] = load_data_breast(n_attributes=4, n_data = 150)
+
     #Scale the data
     [sample_train, sample_test] = scale(sample_train, sample_test, -1, 1)
 
