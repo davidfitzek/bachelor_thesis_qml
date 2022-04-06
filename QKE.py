@@ -1,4 +1,5 @@
 from distutils.util import execute
+from lib2to3.pytree import type_repr
 import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
@@ -24,11 +25,11 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_
     kernel = QuantumKernel(feature_map=map, quantum_instance=Aer.get_backend('statevector_simulator'))
     
     matrix_train = kernel.evaluate(x_vec=sample_train)
+
     matrix_test = kernel.evaluate(x_vec=sample_test, y_vec=sample_train)
 
     zzpc_svc = SVC(kernel='precomputed') #Uses the precomputed kernel and calculates the SVM
     
-
     #Plot the probabilites for the quantum states, circuit and kernel matrix 
     plot_probabilities(sample_train, kernel)
     plot_kernel(matrix_train, matrix_test)
@@ -66,17 +67,20 @@ def plot_curcuit(sample_train, kernel):
     circuit.decompose().decompose().draw(output='mpl')
 
 def main():
-    n_attributes = 15
-    n_data = 150
+    n_attributes = 4
+    n_data = 100
     #'z' is a z feature map 
     #'zz' is a higher order zz feature map 
-    map_type = 'z'
+    map_type = 'zz'
     
     reps = 2 #Repitition of layers in feature map
 
     #Loading data from data.py file
-    [sample_train, sample_test, label_train, label_test] = load_data_forest(n_data, n_attributes)
+    [sample_train, sample_test, label_train, label_test] = load_data_iris(n_data)
+    
+    
     cross_fold_QKE=5
+
 
     QKE(sample_train, sample_test, label_train, label_test, cross_fold_QKE, n_attributes, map_type, reps)
 
