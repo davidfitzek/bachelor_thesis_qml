@@ -1,1 +1,0 @@
-# bachelor_thesis_qml

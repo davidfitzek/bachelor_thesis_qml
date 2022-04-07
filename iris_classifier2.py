@@ -13,6 +13,8 @@ import time
 
 import csv
 
+import numpy
+
 np.random.seed(123) # Set seed for reproducibility
 
 
@@ -62,7 +64,8 @@ def cost_fun(weights, bias, features, labels, variational_classifier_fun):
 	preds = [variational_classifier_fun(weights, feature, bias) for feature in features]
 	return com.square_loss(labels, preds)
 
-def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers, cross_iter):
+def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers,
+			 cross_iter, cross_res, iter_res, cost_res, accu_res):
 	optimiser = opt.NesterovMomentumOptimizer(stepsize = 0.01) # Performs much better than GradientDescentOptimizer
 	#optimiser = opt.AdamOptimizer(stepsize = 0.01) # To be tried, was mentioned
 	#optimiser = opt.GradientDescentOptimizer(stepsize = 0.01)
@@ -102,10 +105,15 @@ def optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_trai
 			'Cross validation iteration: {:d} | Iteration: {:d} | Cost: {:0.7f} | Accuracy train: {:0.7f} | Accuracy validation: {:0.7f} | Layers: {:d} '
 			''.format(cross_iter + 1, i + 1, cost_var, accuracy_train, accuracy_val, n_layers))
 
+		cross_res.append(cross_iter + 1)
+		iter_res.append(i + 1)
+		cost_res.append(cost_var)
+		accu_res.append(float(accuracy_val))
+
 		i += 1
 
-	return [i, cost_var, float(accuracy_val)]
-	#return accuracy_val
+	return [i, cost_var, float(accuracy_val), cross_res, iter_res, cost_res, accu_res]
+
 # Shuffles the data points
 def shuffle_data(data):
 	N = data.size() # Number of data points
@@ -131,42 +139,55 @@ def run_variational_classifier(cross_fold, n_qubits, n_layers, data, stateprep_f
 	N = data.size()
 	cross_size = N // cross_fold
 
-	iteration_res = []
+	iteration_best = []
+	cost_best = []
+	accuracy_best = []
+	cross_res = []
+	iter_res = []
 	cost_res = []
-	accuracy_res = []
+	accu_res = []
 
 	for cross_iter in range(cross_fold):
 		data_train, data_val = dat.split_data(data, cross_iter * cross_size, (cross_iter + 1) * cross_size)
 
 		weights = 0.01 * np.random.randn(n_layers, n_qubits, 3, requires_grad=True)  # Initial value for the weights
 		bias = np.array(0.0, requires_grad=True)  # Initial value for the bias
-		res = optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit, n_layers, cross_iter)
-		iteration_res.append(res[0])
-		cost_res.append(res[1])
-		accuracy_res.append(res[2])
-	return [iteration_res, cost_res, accuracy_res]
+		tmp = optimise(accuracy_stop, cost_stop, iter_stop, weights, bias, data, data_train, data_val, circuit,
+					   n_layers, cross_iter, cross_res, iter_res, cost_res, accu_res)
+		iteration_best.append(tmp[0])
+		cost_best.append(tmp[1])
+		accuracy_best.append(tmp[2])
+		#cross_res.append(tmp[3])
+		#iter_res.append(tmp[4])
+		#cost_res.append(tmp[5])
+		#accu_res.append(tmp[6])
+
+	return [iteration_best, cost_best, accuracy_best, cross_res, iter_res, cost_res, accu_res]
 
 def main():
 	#it will test all the number of layers up to this number
-	range_layers = 8
+	range_layers = 1
 
 	# if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
-	accuracy_stop = 1
-	cost_stop = 0.1
-	iter_stop = 100
+	accuracy_stop = 0.95
+	cost_stop = 0.3
+	iter_stop = 5
 
-	cross_fold = 8  # The amount of parts the data is divided into, =1 gives no cross validation
+	cross_fold = 2  # The amount of parts the data is divided into, =1 gives no cross validation
 
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_name = ["Amplitude"] #descriptive name
-	stateprep_array = [stateprep_amplitude]
+	stateprep_name = ["Angle"] #descriptive name
+	stateprep_array = [stateprep_angle]
 
 	# Load data
-	data_name = ["Iris", "CANCER"] #descriptive name
-	data_array = [dat.load_data_iris(), dat.load_data_cancer()]
+	data_name = ["Iris"] #descriptive name
+	data_array = [dat.load_data_iris()]
+
+	#Save folder for the data
+	folder = "./Iris/"
 
 	start_time = time.perf_counter()
 
@@ -177,7 +198,7 @@ def main():
 
 		#Corresponds to the first stateprep encoding in stateprep_array
 		if which_stateprep == 0: #Kind of ugly way to do it but I do not know of a better one
-			qubit_array = [2, 5]
+			qubit_array = [4]
 
 		#Tests every dataset
 		for which_data in range(len(data_array)):
@@ -186,46 +207,74 @@ def main():
 			data = data_array[which_data]
 
 			#testing how many layers it takes to achieve accuracy_stop and cost_stop
-			iterations = [0]*range_layers
-			cost = [0]*range_layers
-			accuracy = [0]*range_layers
+			iterMean = [0]*range_layers
+			iterDev = [0]*range_layers
+			costMean = [0]*range_layers
+			costDev = [0]*range_layers
+			accuMean = [0]*range_layers
+			accuDev = [0]*range_layers
 			sec = [0]*range_layers
 
 			for i in range(range_layers):
 				n_layers = i + 1
 				print("Layer " + str(n_layers) + " of " + str(range_layers) + "\n")
 				tic = time.perf_counter()
-				res = run_variational_classifier(cross_fold, n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop)
+				tmp = run_variational_classifier(cross_fold, n_qubits, n_layers, data, stateprep_fun, layer_fun, accuracy_stop, cost_stop, iter_stop)
 				toc = time.perf_counter()
 
-				iteration_res = res[0]
-				cost_res = res[1]
-				accuracy_res = res[2]
+				iteration_best = tmp[0]
+				cost_best = tmp[1]
+				accuracy_best = tmp[2]
+				cross_res = tmp[3]
+				iter_res = tmp[4]
+				cost_res = tmp[5]
+				accu_res = tmp[6]
 
-				iterations[i] = [statistics.mean(iteration_res), statistics.stdev(iteration_res)]
-				cost[i] = [statistics.mean(cost_res), statistics.stdev(cost_res)]
-				accuracy[i] = [statistics.mean(accuracy_res), statistics.stdev(accuracy_res)]
+				iterMean[i] = statistics.mean(iteration_best)
+				iterDev[i] = statistics.stdev(iteration_best)
+				costMean[i] = statistics.mean(cost_best)
+				costDev[i] = statistics.stdev(cost_best)
+				accuMean[i] = statistics.mean(accuracy_best)
+				accuDev[i] = statistics.stdev(accuracy_best)
 				sec[i] = toc - tic
 
 				print(" ")
 				print("It took " + str(sec[i]) + " seconds"  )
-				print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(statistics.mean(accuracy_res), statistics.stdev(accuracy_res)))
-				print('Final Cost: {:0.7f} +- {:0.7f}'.format(statistics.mean(cost_res), statistics.stdev(cost_res)) + "\n")
+				print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(statistics.mean(accuracy_best), statistics.stdev(accuracy_best)))
+				print('Final Cost: {:0.7f} +- {:0.7f}'.format(statistics.mean(cost_best), statistics.stdev(cost_best)) + "\n")
 
-			with open(data_name[which_data] + stateprep_name[which_stateprep] + "Iterarions.csv", "w") as f:
+				#save the data as a file
+				fields = ["Cross iteration", "Iteration", "Cost", "Accuracy"]
+				res = []
+				res.append(cross_res)
+				res.append(iter_res)
+				res.append(cost_res)
+				res.append(accu_res)
+				res = numpy.array(res).T.tolist()
+
+				with open(folder + data_name[which_data] + stateprep_name[which_stateprep] + "Layer" + str(n_layers) + ".csv", "w") as f:
+					write = csv.writer(f)
+
+					write.writerow(fields)
+					write.writerows(res)
+
+			#Save the data as a file
+			fields = ["Iterations mean", "Iterations dev", "Cost mean", "Cost dev", "Accuracy mean", "Accuracy dev", "Seconds"]
+			res = []
+			res.append(iterMean)
+			res.append(iterDev)
+			res.append(costMean)
+			res.append(costDev)
+			res.append(accuMean)
+			res.append(accuDev)
+			res.append(sec)
+			res = numpy.array(res).T.tolist()
+
+			with open(folder + data_name[which_data] + stateprep_name[which_stateprep] + ".csv", "w") as f:
 				write = csv.writer(f)
 
-				write.writerow(iterations)
-
-			with open(data_name[which_data] + stateprep_name[which_stateprep] + "Cost.csv", "w") as f:
-				write = csv.writer(f)
-
-				write.writerow(cost)
-
-			with open(data_name[which_data] + stateprep_name[which_stateprep] + "Sec.csv", "w") as f:
-				write = csv.writer(f)
-
-				write.writerow(sec)
+				write.writerow(fields)
+				write.writerows(res)
 
 	stop_time = time.perf_counter()
 	total_time = (stop_time - start_time) / 3600.0

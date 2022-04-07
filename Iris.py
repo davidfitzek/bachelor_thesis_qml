@@ -163,8 +163,8 @@ def main():
 	layer_fun = layer_ex1
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_name = ["Amplitude"] #descriptive name
-	stateprep_array = [stateprep_amplitude]
+	stateprep_name = ["Angle"] #descriptive name
+	stateprep_array = [stateprep_angle]
 
 	# Load data
 	data_name = ["Iris"] #descriptive name
@@ -179,7 +179,7 @@ def main():
 
 		#Corresponds to the first stateprep encoding in stateprep_array
 		if which_stateprep == 0: #Kind of ugly way to do it but I do not know of a better one
-			qubit_array = [2]
+			qubit_array = [4]
 
 		#Tests every dataset
 		for which_data in range(len(data_array)):
