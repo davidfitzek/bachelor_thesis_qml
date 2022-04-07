@@ -105,7 +105,7 @@ def load_data_cancer():
 
 	return Data(X, Y)
 
-def load_data_forest():
+def load_data_forest(size = 500):
 
 	# Load the data set
 	data = fetch_covtype()
@@ -113,31 +113,25 @@ def load_data_forest():
 	X_raw = data['data']
 	Y_raw = data['target']
 
-	Y = []
-	X = []
+	# Number of data points
+	N = len(Y_raw)
 
-	# It turns out this will yield a dataset of 495 141 points
-	# We limit the size to the first 500 for now
-	# Might be replaced with a random sample instead
+	X_ones = np.array([np.array(X_raw[i]) for i in range(N) if Y_raw[i] == 1])
+	X_twos = np.array([np.array(X_raw[i]) for i in range(N) if Y_raw[i] == 2])
 
-	# In the forest data elements can be of type 1 to 7
-	# We only look at type 1 and type 2
-	cnt = 0
-	for x, y in zip(X_raw, Y_raw):
-		if y < 3:
-			X.append(np.array(x))
-			Y.append(y)
-			# Not 
-			cnt = cnt + 1
-			if cnt == 500:
-				break
+	N_ones = len(X_ones)
+	N_twos = len(X_twos)
 
-	# Convert to numpy array
-	Y = np.array(Y)
-	X = np.array(X)
+	n = size // 2
 
-	# Scale and translate Y from 1 and 2 to -1 and 1
-	Y = 2 * Y - 3
+	indexes_ones = np.random.choice(range(N_ones), size = n, replace = False)
+	indexes_twos = np.random.choice(range(N_twos), size = n, replace = False)
+
+	X_ones = X_ones[indexes_ones]
+	X_twos = X_twos[indexes_twos]
+
+	X = np.concatenate((X_ones, X_twos))
+	Y = np.concatenate((np.full(n, -1), np.full(n, 1)))
 
 	return Data(X, Y)
 
