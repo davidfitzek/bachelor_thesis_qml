@@ -2,6 +2,7 @@
 from pennylane import numpy as np
 from sklearn.datasets import load_iris, load_breast_cancer, fetch_covtype
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
 from qiskit_machine_learning.datasets import ad_hoc_data
 
 # Collect this in a class
@@ -15,6 +16,27 @@ class Data:
 		return len(self.Y)
 
 # Split a data object into training and validation data
+# p is the proportion of the data which should be used for training
+#def split_data(data, p):
+#
+#	X_train, X_val, Y_train, Y_val = train_test_split(data.X, data.Y, train_size = p)
+#
+#	return Data(X_train, Y_train), Data(X_val, Y_val)
+
+# Reduces the dimension of the features based on principal component analysis
+def reduce_data(data, dim):
+	# Reduce dimensions
+	X_red = data.X
+	pca = PCA(n_components = dim)
+	X_red = pca.fit_transform(X_red)
+
+	# PennyLane numpy differ from normal numpy.
+	# Converts np.ndarray to pennylane.np.tensor.tensor
+	X_red = np.array([np.array(x) for x in X_red])
+
+	return Data(X_red, data.Y)
+
+# Split a data object into training and validation data
 # start and stop are the indicies for where that validation data begins and ends
 # The rest of the data points are assumed to be training data
 def split_data(data, start, stop):
@@ -26,6 +48,14 @@ def split_data(data, start, stop):
 	Y_val = data.Y[start : stop]
 
 	return Data(X_train, Y_train), Data(X_val, Y_val)
+
+# Shuffles the data points
+def shuffle_data(data):
+	N = data.size() # Number of data points
+
+	indexes = np.random.permutation(N)
+
+	return Data(data.X[indexes], data.Y[indexes])
 
 # Load the iris data set from sklearn into a data object
 def load_data_iris():
@@ -75,7 +105,7 @@ def load_data_cancer():
 
 	return Data(X, Y)
 
-def load_data_forest():
+def load_data_forest(size = 500):
 
 	# Load the data set
 	data = fetch_covtype()
@@ -83,31 +113,25 @@ def load_data_forest():
 	X_raw = data['data']
 	Y_raw = data['target']
 
-	Y = []
-	X = []
+	# Number of data points
+	N = len(Y_raw)
 
-	# It turns out this will yield a dataset of 495 141 points
-	# We limit the size to the first 500 for now
-	# Might be replaced with a random sample instead
+	X_ones = np.array([np.array(X_raw[i]) for i in range(N) if Y_raw[i] == 1])
+	X_twos = np.array([np.array(X_raw[i]) for i in range(N) if Y_raw[i] == 2])
 
-	# In the forest data elements can be of type 1 to 7
-	# We only log at type 1 and type 2
-	cnt = 0
-	for x, y in zip(X_raw, Y_raw):
-		if y < 3:
-			X.append(np.array(x))
-			Y.append(y)
-			# Not 
-			cnt = cnt + 1
-			if cnt == 500:
-				break
+	N_ones = len(X_ones)
+	N_twos = len(X_twos)
 
-	# Convert to numpy array
-	Y = np.array(Y)
-	X = np.array(X)
+	n = size // 2
 
-	# Scale and translate Y from 1 and 2 to -1 and 1
-	Y = 2 * Y - 3
+	indexes_ones = np.random.choice(range(N_ones), size = n, replace = False)
+	indexes_twos = np.random.choice(range(N_twos), size = n, replace = False)
+
+	X_ones = X_ones[indexes_ones]
+	X_twos = X_twos[indexes_twos]
+
+	X = np.concatenate((X_ones, X_twos))
+	Y = np.concatenate((np.full(n, -1), np.full(n, 1)))
 
 	return Data(X, Y)
 
@@ -120,5 +144,8 @@ def load_data_adhoc(dimensions = 2, size = 500, gap = 0.3):
 	# Converts np.ndarray to pennylane.np.tensor.tensor
 	Y = np.array([y[0] for y in Y]) # Y has two columns although these columns are either [0, 1] or [1, 0] so we can discard the second dimension
 	X = np.array([np.array(x) for x in X], requires_grad = False)
+
+	# Scale and translate Y from 0 and 1 to -1 and 1
+	y = 2 * Y - 1
 
 	return Data(X, Y)

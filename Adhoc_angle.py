@@ -178,9 +178,9 @@ def main():
     range_layers = 10
 
     # if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
-    accuracy_stop = 0.95
-    cost_stop = 0.3
-    iter_stop = 5
+    accuracy_stop = 1
+    cost_stop = 0.1
+    iter_stop = 100
 
     cross_fold = 10  # The amount of parts the data is divided into, =1 gives no cross validation
 

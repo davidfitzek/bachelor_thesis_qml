@@ -171,7 +171,7 @@ def main():
 	# if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
 	accuracy_stop = 0.95
 	cost_stop = 0.3
-	iter_stop = 5
+	iter_stop = 100
 
 	cross_fold = 2  # The amount of parts the data is divided into, =1 gives no cross validation
 
