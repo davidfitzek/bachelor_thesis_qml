@@ -10,6 +10,8 @@ import data as dat
 import statistics as stat
 import json
 
+import sys
+
 np.random.seed(123) # Set seed for reproducibility
 
 # The layer for the circuit
@@ -36,6 +38,12 @@ def stateprep_amplitude(features):
 	wires = np.int64(np.ceil(np.log2(len(features))))
 	# Normalise the features here and also pad it to have the length of a power of two
 	qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
+
+def stateprep_angle2(features):
+	wires = len(features)
+	for wire in range(wires):
+		qml.Hadamard(wire)
+	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Y')
 
 def stateprep_angle(features):
 	wires = len(features)
@@ -145,10 +153,10 @@ def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, 
 
 def main():
 
-	n_iter = 2 # Number of iterations, should be changed to a tolerance based process instead
-	cross_fold = 2 # The ammount of parts the data is divided into, 1 gives no cross validation
+	n_iter = 100 # Number of iterations, should be changed to a tolerance based process instead
+	cross_fold = 10 # The ammount of parts the data is divided into, 1 gives no cross validation
 
-	n_qubits = 4
+	n_qubits = 12
 	n_layers = 4
 
 	# Can be any function that takes an input vector and encodes it
@@ -158,8 +166,8 @@ def main():
 	layer_fun = layer_ex1
 
 	# Load the data set
-	data = dat.load_data_iris()
-	#data = dat.reduce_data(data, n_qubits)
+	data = dat.load_data_forest()
+	data = dat.reduce_data(data, n_qubits)
 
 	res = run_variational_classifier(
 		n_iter,
@@ -172,7 +180,7 @@ def main():
 	)
 	
 	# Dump data
-	dump_file = 'data/test.json'
+	dump_file = 'data/test_forest12_amplitude.json'
 	with open(dump_file, 'w') as f:
 		json.dump(res, f)
 		print('Dumped data to ' + dump_file)
