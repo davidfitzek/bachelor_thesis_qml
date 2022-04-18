@@ -28,12 +28,22 @@ def main():
 
     poly_degree=2
 
-    data=load_data_breast(20, 570)
-
+    #data=load_data_forest_oscar(500)
+    data=load_data_iris(100)
+     
+    ''' 
+    [X, Y] = reduceClassDimensions(data.X, data.Y, 2, 500)
+    forest_sample_train, forest_sample_test, forest_label_train, forest_label_test = train_test_split(
+        X, Y, test_size=0.3, random_state=22)
+    [forest_sample_train, forest_sample_test] = reduceAttributeDimensions(6, forest_sample_train, forest_sample_test)
     #Amount of parts the data is divided into for cross validation
     #The runtime will be increased by a factor of this number roughly
     #if crossfold<=1 no cross validation is done
-    cross_fold=5
+
+    data = [forest_sample_train, forest_sample_test, forest_label_train, forest_label_test]
+    '''
+
+    cross_fold=10
 
     #Run the SVM once normally
     run_SVM(

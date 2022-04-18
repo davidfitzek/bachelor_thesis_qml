@@ -3,6 +3,47 @@ from sklearn.model_selection import train_test_split
 from qiskit_machine_learning.datasets import ad_hoc_data, sample_ad_hoc_data
 from QKE_functions import *
 
+# Collect this in a class
+class Data:
+
+	def __init__(self, X, Y):
+		self.X = X
+		self.Y = Y
+
+	def size(self):
+		return len(self.Y)
+
+def load_data_forest_oscar(size = 500):
+
+	# Load the data set
+	data = datasets.fetch_covtype()
+
+	X_raw = data['data']
+	Y_raw = data['target']
+
+	# Number of data points
+	N = len(Y_raw)
+
+	X_ones = np.array([np.array(X_raw[i]) for i in range(N) if Y_raw[i] == 1])
+	X_twos = np.array([np.array(X_raw[i]) for i in range(N) if Y_raw[i] == 2])
+
+	N_ones = len(X_ones)
+	N_twos = len(X_twos)
+
+	n = size // 2
+
+	indexes_ones = np.random.choice(range(N_ones), size = n, replace = False)
+	indexes_twos = np.random.choice(range(N_twos), size = n, replace = False)
+
+	X_ones = X_ones[indexes_ones]
+	X_twos = X_twos[indexes_twos]
+
+	X = np.concatenate((X_ones, X_twos))
+	Y = np.concatenate((np.full(n, -1), np.full(n, 1)))
+
+	return Data(X, Y)
+
+
 def load_data_forest(n_data, n_attributes):
     '''
     Loads the dataset forest with length n_data and returns four datasets

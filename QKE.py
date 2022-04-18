@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 import numpy as np
+from qiskit import *
 from qiskit.circuit.library import *
 from qiskit import Aer, execute
 from qiskit.tools.visualization import plot_histogram
@@ -12,16 +13,24 @@ from qiskit_machine_learning.datasets import ad_hoc_data
 from QKE_functions import *
 from classicalSVM import *
 from data import *
+from qiskit import IBMQ
+
 
 def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_dimension, map_type, reps):
 
     if map_type == 'zz':
         map = ZZFeatureMap(feature_dimension, reps, entanglement="linear", insert_barriers=True)
     else:
-        map = PauliFeatureMap(feature_dimension, reps=reps, paulis=['Z', 'Y', 'ZZ'])
+        #map = PauliFeatureMap(feature_dimension, reps=reps, paulis=['Z', 'Y', 'ZZ'])
         #map = RealAmplitudes(feature_dimension, entanglement="full", reps=2, insert_barriers=True)
-        #map = ZFeatureMap(feature_dimension, reps, insert_barriers=True)
+        map = ZFeatureMap(feature_dimension, reps, insert_barriers=True)
 
+    IBMQ.save_account('a38fb08449a69f7b683b17920cf77c6a22ebfa6a9fb4a1ca90b435720b1dff09200489b1372d40941db1ab58e8d1997be2806d659769e1c9e90360c38d958a3b', overwrite=True)
+    IBMQ.load_account()
+    provider = IBMQ.get_provider('ibm-q')
+    qcomp = provider.get_backend('ibmq_qasm_simulator')
+
+    #kernel = QuantumKernel(feature_map=map, quantum_instance=qcomp)
     kernel = QuantumKernel(feature_map=map, quantum_instance=Aer.get_backend('statevector_simulator'))
     
     matrix_train = kernel.evaluate(x_vec=sample_train)
@@ -34,7 +43,7 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_
     plot_probabilities(sample_train, kernel)
     plot_kernel(matrix_train, matrix_test)
     plot_curcuit(sample_train, kernel)
-    #plt.show()
+    plt.show()
     if cross_fold<=1:
         #Calculates accuracy without cross validation
         zzpc_svc.fit(matrix_train, label_train)
@@ -44,6 +53,7 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_
         #Calculates accuracy with cross validation, and presents mean and standard deviation
         scores=cross_val_score(zzpc_svc,matrix_train,label_train, cv=cross_fold)
         print("QKE accuracy: %0.3f ± %0.3f, Cross_fold ammount: %0.1f\n" % (scores.mean(), scores.std(), cross_fold))
+        print(scores)
 
 
 def plot_probabilities(sample_train, kernel):
@@ -67,7 +77,7 @@ def plot_curcuit(sample_train, kernel):
     circuit.decompose().decompose().draw(output='mpl')
 
 def main():
-    n_attributes = 4
+    n_attributes = 2
     n_data = 100
     #'z' is a z feature map 
     #'zz' is a higher order zz feature map 
@@ -76,9 +86,8 @@ def main():
     reps = 2 #Repitition of layers in feature map
 
     #Loading data from data.py file
-    [sample_train, sample_test, label_train, label_test] = load_data_breast(n_attributes=4, n_data = 150)
-
-    cross_fold_QKE=5
+    [sample_train, sample_test, label_train, label_test] = load_data_adhoc(50, 2)
+    cross_fold_QKE=1
 
     QKE(sample_train, sample_test, label_train, label_test, cross_fold_QKE, n_attributes, map_type, reps)
 
@@ -87,6 +96,7 @@ def main():
     #Amount of parts the data is divided into for cross validation
     #The runtime will be increased by a factor of this number roughly
     #if crossfold<=1 no cross validation is done
+    '''
     cross_fold_classical=5
     run_SVM(
         kernel_function,
@@ -94,6 +104,7 @@ def main():
         [sample_train, sample_test, label_train, label_test],
         cross_fold_classical
     )
+    '''
 
 if __name__ == '__main__':
     main()
