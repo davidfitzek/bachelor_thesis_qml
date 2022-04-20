@@ -178,8 +178,8 @@ def main():
     range_layers = 10
 
     # if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
-    accuracy_stop = 2
-    cost_stop = 0.0
+    accuracy_stop = 0.8
+    cost_stop = 0.3
     iter_stop = 100
 
     cross_fold = 10  # The amount of parts the data is divided into, =1 gives no cross validation
@@ -192,8 +192,8 @@ def main():
     stateprep_array = [stateprep_amplitude]
 
     # Load data
-    data_name = ["Iris"]  # descriptive name
-    data_array = [dat.load_data_iris()]
+    data_name = ["Adhoc3"]  # descriptive name
+    data_array = [dat.load_data_adhoc(dimensions = 3)]
 
     start_time = time.perf_counter()
 
@@ -261,7 +261,7 @@ def main():
                 res.append(accu_res)
                 res = numpy.array(res).T.tolist()
 
-                with open("./Iris/" + data_name[which_data] + stateprep_name[which_stateprep] + "Layer" + str(
+                with open("./Adhoc/" + data_name[which_data] + stateprep_name[which_stateprep] + "Layer" + str(
                         n_layers) + ".csv", "w") as f:
                     write = csv.writer(f)
 
@@ -281,7 +281,7 @@ def main():
             res.append(sec)
             res = numpy.array(res).T.tolist()
 
-            with open("./Iris/" + data_name[which_data] + stateprep_name[which_stateprep] + ".csv", "w") as f:
+            with open("./Adhoc/" + data_name[which_data] + stateprep_name[which_stateprep] + ".csv", "w") as f:
                 write = csv.writer(f)
 
                 write.writerow(fields)

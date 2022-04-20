@@ -178,7 +178,7 @@ def main():
     range_layers = 10
 
     # if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
-    accuracy_stop = 0.95
+    accuracy_stop = 0.8
     cost_stop = 0.3
     iter_stop = 100
 
@@ -188,12 +188,12 @@ def main():
     layer_fun = layer_ex1
 
     # Can be any function that takes an input vector and encodes it
-    stateprep_name = ["Angle"]  # descriptive name
-    stateprep_array = [stateprep_angle]
+    stateprep_name = ["Amplitude"]  # descriptive name
+    stateprep_array = [stateprep_amplitude]
 
     # Load data
-    data_name = ["Iris"]  # descriptive name
-    data_array = [dat.load_data_iris()]
+    data_name = ["Adhoc2"]  # descriptive name
+    data_array = [dat.load_data_adhoc()]
 
     start_time = time.perf_counter()
 
@@ -204,7 +204,7 @@ def main():
 
         # Corresponds to the first stateprep encoding in stateprep_array
         if which_stateprep == 0:  # Kind of ugly way to do it but I do not know of a better one
-            qubit_array = [4]
+            qubit_array = [2]
 
         # Tests every dataset
         for which_data in range(len(data_array)):
@@ -261,7 +261,7 @@ def main():
                 res.append(accu_res)
                 res = numpy.array(res).T.tolist()
 
-                with open("./Iris/" + data_name[which_data] + stateprep_name[which_stateprep] + "Layer" + str(
+                with open("./Adhoc/" + data_name[which_data] + stateprep_name[which_stateprep] + "Layer" + str(
                         n_layers) + ".csv", "w") as f:
                     write = csv.writer(f)
 
@@ -281,7 +281,7 @@ def main():
             res.append(sec)
             res = numpy.array(res).T.tolist()
 
-            with open("./Iris/" + data_name[which_data] + stateprep_name[which_stateprep] + ".csv", "w") as f:
+            with open("./Adhoc/" + data_name[which_data] + stateprep_name[which_stateprep] + ".csv", "w") as f:
                 write = csv.writer(f)
 
                 write.writerow(fields)

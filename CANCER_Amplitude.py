@@ -175,14 +175,14 @@ def run_variational_classifier(cross_fold, n_qubits, n_layers, data, stateprep_f
 
 def main():
     # it will test all the number of layers up to this number
-    range_layers = 10
+    range_layers = 1
 
     # if the accuracy validation is higher and the cost is lower or if the iterations are higher it stops
-    accuracy_stop = 0.95
-    cost_stop = 0.3
-    iter_stop = 5
+    accuracy_stop = 1
+    cost_stop = 0.1
+    iter_stop = 50
 
-    cross_fold = 10  # The amount of parts the data is divided into, =1 gives no cross validation
+    cross_fold = 5  # The amount of parts the data is divided into, =1 gives no cross validation
 
     # Can be any function which takes in a matrix of weights and creates a layer
     layer_fun = layer_ex1
@@ -195,6 +195,8 @@ def main():
     data_name = ["CANCER"]  # descriptive name
     data_array = [dat.load_data_cancer()]
 
+    file = "./CANCER/1Layer/"
+
     start_time = time.perf_counter()
 
     # Tests every state preparation
@@ -204,7 +206,7 @@ def main():
 
         # Corresponds to the first stateprep encoding in stateprep_array
         if which_stateprep == 0:  # Kind of ugly way to do it but I do not know of a better one
-            qubit_array = [4]
+            qubit_array = [5]
 
         # Tests every dataset
         for which_data in range(len(data_array)):
@@ -261,7 +263,7 @@ def main():
                 res.append(accu_res)
                 res = numpy.array(res).T.tolist()
 
-                with open("./CANCER/" + data_name[which_data] + stateprep_name[which_stateprep] + "Layer" + str(
+                with open(file + data_name[which_data] + stateprep_name[which_stateprep] + "Layer" + str(
                         n_layers) + ".csv", "w") as f:
                     write = csv.writer(f)
 
@@ -281,7 +283,7 @@ def main():
             res.append(sec)
             res = numpy.array(res).T.tolist()
 
-            with open("./CANCER/" + data_name[which_data] + stateprep_name[which_stateprep] + ".csv", "w") as f:
+            with open(file + data_name[which_data] + stateprep_name[which_stateprep] + ".csv", "w") as f:
                 write = csv.writer(f)
 
                 write.writerow(fields)
