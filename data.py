@@ -3,6 +3,7 @@ from pennylane import numpy as np
 from sklearn.datasets import load_iris, load_breast_cancer, fetch_covtype
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 from qiskit_machine_learning.datasets import ad_hoc_data
 
 # Collect this in a class
@@ -35,6 +36,17 @@ def reduce_data(data, dim):
 	X_red = np.array([np.array(x) for x in X_red])
 
 	return Data(X_red, data.Y)
+
+def normalise_data(data):
+	# Normalise the features
+	std_scale = StandardScaler().fit(data.X)
+	X_scaled = std_scale.transform(data.X)
+
+	# PennyLane numpy differ from normal numpy.
+	# Converts np.ndarray to pennylane.np.tensor.tensor
+	X_scaled = np.array([np.array(x) for x in X_scaled])
+
+	return Data(X_scaled, data.Y)
 
 # Split a data object into training and validation data
 # start and stop are the indicies for where that validation data begins and ends
