@@ -14,6 +14,8 @@ import sys
 
 np.random.seed(123) # Set seed for reproducibility
 
+circuit_calls = 0 # Global for counting number of times the circuit has been called
+
 # The layer for the circuit
 def layer_ex1(weights):
 	n = len(weights)
@@ -39,11 +41,21 @@ def stateprep_amplitude(features):
 	# Normalise the features here and also pad it to have the length of a power of two
 	qml.AmplitudeEmbedding(features = features, wires = range(wires), pad_with = 0, normalize = True)
 
-def stateprep_angle2(features):
+def stateprep_Z(features):
 	wires = len(features)
 	for wire in range(wires):
 		qml.Hadamard(wire)
 	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Y')
+
+def stateprep_ZZ(features):
+	wires = len(features)
+	for wire in range(wires):
+		qml.Hadamard(wire)
+	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Y')
+	for i in range(1, wires):
+		qml.CNOT(wires = [i - 1, i])
+		qml.RY((np.pi - features[i - 1]) * (np.pi - features[i]))
+		qml.CNOT(wires = [i - 1, i])
 
 def stateprep_angle(features):
 	wires = len(features)
@@ -51,6 +63,8 @@ def stateprep_angle(features):
 
 # The circuit function, allows variable statepreparation and layer functions
 def circuit_fun(weights, features, stateprep_fun, layer_fun):
+	global circuit_calls
+	circuit_calls += 1
 
 	stateprep_fun(features)
 
@@ -95,11 +109,12 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_i
 		Y_train_batch = data_train.Y[batch_index]
 		weights, bias, _, _ = optimiser.step(cost, weights, bias, X_train_batch, Y_train_batch)
 		# Compute predictions on train and test set
-		predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
+		#predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
 		predictions_val = [np.sign(variational_classifier(weights, x, bias)) for x in data_val.X]
 
 		# Compute accuracy on train and test set
-		accuracy_train = com.accuracy(data_train.Y, predictions_train)
+		#accuracy_train = com.accuracy(data_train.Y, predictions_train)
+		accuracy_train = 0
 		accuracy_val = com.accuracy(data_val.Y, predictions_val)
 
 		cost_ = cost(weights, bias, data.X, data.Y)
@@ -123,9 +138,15 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_i
 
 def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, layer_fun, cross_fold):
 
+	# Read in IBMQ token
+	token = ''
+	with open('ibmq_token', 'r') as f:
+		token = f.read()[: -1] # Read in token and remove newline character
+
 	# The device dused by pennylane
-	device = qml.device("default.qubit", wires = n_qubits)
-		
+	device = qml.device('default.qubit', wires = n_qubits)
+	#device = qml.device('qiskit.ibmq', wires = n_qubits, backend = 'ibmq_qasm_simulator', ibmqx_token = token)
+
 	# Circuit function used by pennylane
 	@qml.qnode(device)
 	def circuit(weights, x):
@@ -153,21 +174,21 @@ def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, 
 
 def main():
 
-	n_iter = 100 # Number of iterations, should be changed to a tolerance based process instead
+	n_iter = 30 # Number of iterations, should be changed to a tolerance based process instead
 	cross_fold = 10 # The ammount of parts the data is divided into, 1 gives no cross validation
 
-	n_qubits = 12
+	n_qubits = 2
 	n_layers = 4
 
 	# Can be any function that takes an input vector and encodes it
-	stateprep_fun = stateprep_angle
+	stateprep_fun = stateprep_amplitude
 
 	# Can be any function which takes in a matrix of weights and creates a layer
 	layer_fun = layer_ex1
 
 	# Load the data set
-	data = dat.load_data_forest()
-	data = dat.reduce_data(data, n_qubits)
+	data = dat.load_data_iris()
+	#data = dat.reduce_data(data, n_qubits)
 
 	res = run_variational_classifier(
 		n_iter,
@@ -180,7 +201,8 @@ def main():
 	)
 	
 	# Dump data
-	dump_file = 'data/test_forest12_amplitude.json'
+	#dump_file = 'data/test_iris_amplitude_ibm.json'
+	dump_file = 'data/test.json'
 	with open(dump_file, 'w') as f:
 		json.dump(res, f)
 		print('Dumped data to ' + dump_file)
@@ -192,6 +214,7 @@ def main():
 	stdev = stat.stdev(final_acc, xbar = mean)
 
 	print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(mean, stdev))
+	print('Circuit Calls: {}'.format(circuit_calls))
 
 if __name__ == '__main__':
 	main()
