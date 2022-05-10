@@ -109,19 +109,19 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_i
 		Y_train_batch = data_train.Y[batch_index]
 		weights, bias, _, _ = optimiser.step(cost, weights, bias, X_train_batch, Y_train_batch)
 		# Compute predictions on train and test set
-		#predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
+		predictions_train = [np.sign(variational_classifier(weights, x, bias)) for x in data_train.X]
 		predictions_val = [np.sign(variational_classifier(weights, x, bias)) for x in data_val.X]
 
 		# Compute accuracy on train and test set
-		#accuracy_train = com.accuracy(data_train.Y, predictions_train)
-		accuracy_train = 0
+		#accuracy_train = 0
+		accuracy_train = com.accuracy(data_train.Y, predictions_train)
 		accuracy_val = com.accuracy(data_val.Y, predictions_val)
 
 		cost_ = cost(weights, bias, data.X, data.Y)
 
 		print(
 			'Cross validation iteration: {:5d} | Iteration: {:5d} | Cost: {:0.7f} | Accuracy training: {:0.7f} | Accuracy validation: {:0.7f}'
-			''.format(cross_iter + 1, i + 1, cost(weights, bias, data.X, data.Y), accuracy_train, accuracy_val)
+			''.format(cross_iter + 1, i + 1, cost_, accuracy_train, accuracy_val)
 		)
 
 		costs.append(float(cost_))
@@ -131,7 +131,9 @@ def optimise(n_iter, weights, bias, data, data_train, data_val, circuit, cross_i
 	doc = {
 		'costs': costs,
 		'acc_train': acc_train,
-		'acc_val': acc_val
+		'acc_val': acc_val,
+		'weights': [[[float(a) for a in w] for w in weight] for weight in weights],
+		'bias': float(bias)
 	}
 
 	return doc
@@ -174,11 +176,11 @@ def run_variational_classifier(n_iter, n_qubits, n_layers, data, stateprep_fun, 
 
 def main():
 
-	n_iter = 30 # Number of iterations, should be changed to a tolerance based process instead
+	n_iter = 100 # Number of iterations, should be changed to a tolerance based process instead
 	cross_fold = 10 # The ammount of parts the data is divided into, 1 gives no cross validation
 
 	n_qubits = 2
-	n_layers = 4
+	n_layers = 10
 
 	# Can be any function that takes an input vector and encodes it
 	stateprep_fun = stateprep_amplitude
@@ -188,7 +190,11 @@ def main():
 
 	# Load the data set
 	data = dat.load_data_iris()
+	#data = data.first(50)
+
 	#data = dat.reduce_data(data, n_qubits)
+	#data = dat.scale_data(data, -1, 1)
+	#data = dat.normalise_data(data)
 
 	res = run_variational_classifier(
 		n_iter,
@@ -201,19 +207,23 @@ def main():
 	)
 	
 	# Dump data
-	#dump_file = 'data/test_iris_amplitude_ibm.json'
-	dump_file = 'data/test.json'
+	dump_file = 'data/test_weights_bias_iris_amplitude_bastlayers.json'
 	with open(dump_file, 'w') as f:
 		json.dump(res, f)
 		print('Dumped data to ' + dump_file)
 
 	# Compute some statistics with the accuracies
 	final_acc = [val['acc_val'][-1] for key, val in res.items()]
+	final_cost = [val['costs'][-1] for key, val in res.items()]
 
-	mean = stat.mean(final_acc)
-	stdev = stat.stdev(final_acc, xbar = mean)
+	mean_acc = stat.mean(final_acc)
+	stdev_acc = stat.stdev(final_acc, xbar = mean_acc)
 
-	print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(mean, stdev))
+	mean_cost = stat.mean(final_cost)
+	stdev_cost = stat.stdev(final_cost, xbar = mean_cost)
+
+	print('Final Accuracy: {:0.7f} +- {:0.7f}'.format(mean_acc, stdev_acc))
+	print('Final cost: {:0.7f} +- {:0.7f}'.format(mean_cost, stdev_cost))
 	print('Circuit Calls: {}'.format(circuit_calls))
 
 if __name__ == '__main__':

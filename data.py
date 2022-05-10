@@ -3,7 +3,7 @@ from pennylane import numpy as np
 from sklearn.datasets import load_iris, load_breast_cancer, fetch_covtype
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from qiskit_machine_learning.datasets import ad_hoc_data
 
 # Collect this in a class
@@ -15,6 +15,9 @@ class Data:
 
 	def size(self):
 		return len(self.Y)
+
+	def first(self, n):
+		return Data(self.X[: n], self.Y[: n])
 
 # Split a data object into training and validation data
 # p is the proportion of the data which should be used for training
@@ -41,6 +44,17 @@ def normalise_data(data):
 	# Normalise the features
 	std_scale = StandardScaler().fit(data.X)
 	X_scaled = std_scale.transform(data.X)
+
+	# PennyLane numpy differ from normal numpy.
+	# Converts np.ndarray to pennylane.np.tensor.tensor
+	X_scaled = np.array([np.array(x) for x in X_scaled])
+
+	return Data(X_scaled, data.Y)
+
+def scale_data(data, min, max):
+	# Normalise the features
+	minmax_scale = MinMaxScaler((min, max)).fit(data.X)
+	X_scaled = minmax_scale.transform(data.X)
 
 	# PennyLane numpy differ from normal numpy.
 	# Converts np.ndarray to pennylane.np.tensor.tensor
