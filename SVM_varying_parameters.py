@@ -1,4 +1,4 @@
-from sklearn.model_selection import cross_val_score, GridSearchCV
+from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 from data import *
 import warnings
@@ -96,8 +96,7 @@ def run_SVM(data,cross_fold):
             results(k, mean_scores, stds, parameters)
         else:
             [mean_scores, stds, parameters] = measure(i, k, cross_fold, data)
-            results(k, mean_scores, stds, parameters)
-                
+            results(k, mean_scores, stds, parameters)      
         
 def main():
 
