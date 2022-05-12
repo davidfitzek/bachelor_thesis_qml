@@ -28,7 +28,7 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_
     IBMQ.save_account('a38fb08449a69f7b683b17920cf77c6a22ebfa6a9fb4a1ca90b435720b1dff09200489b1372d40941db1ab58e8d1997be2806d659769e1c9e90360c38d958a3b', overwrite=True)
     IBMQ.load_account()
     provider = IBMQ.get_provider('ibm-q')
-    qcomp = provider.get_backend('ibmq_qasm_simulator')
+    qcomp = provider.get_backend('ibmq_manila')
 
     #kernel = QuantumKernel(feature_map=map, quantum_instance=qcomp)
     kernel = QuantumKernel(feature_map=map, quantum_instance=Aer.get_backend('statevector_simulator'))
@@ -43,7 +43,7 @@ def QKE(sample_train, sample_test, label_train, label_test, cross_fold, feature_
     plot_probabilities(sample_train, kernel)
     plot_kernel(matrix_train, matrix_test)
     plot_curcuit(sample_train, kernel)
-    plt.show()
+    #plt.show()
     if cross_fold<=1:
         #Calculates accuracy without cross validation
         zzpc_svc.fit(matrix_train, label_train)
@@ -77,17 +77,18 @@ def plot_curcuit(sample_train, kernel):
     circuit.decompose().decompose().draw(output='mpl')
 
 def main():
-    n_attributes = 2
+    n_attributes = 4
     n_data = 100
     #'z' is a z feature map 
     #'zz' is a higher order zz feature map 
     map_type = 'zz'
     
-    reps = 2 #Repitition of layers in feature map
+    reps = 1 #Repitition of layers in feature map
 
     #Loading data from data.py file
-    [sample_train, sample_test, label_train, label_test] = load_data_adhoc(50, 2)
-    cross_fold_QKE=1
+    [sample_train, sample_test, label_train, label_test] = load_data_iris(100)
+    #[sample_train, sample_test, label_train, label_test] = load_data_adhoc(50, 2)
+    cross_fold_QKE=10
 
     QKE(sample_train, sample_test, label_train, label_test, cross_fold_QKE, n_attributes, map_type, reps)
 

@@ -102,17 +102,18 @@ def load_data_breast(n_attributes, n_data):
     Y_raw = data.target
     #The forest dataset has classes from (0-2), by setting 
     #n_classes = 1, we only look at 0 and 1.
-    n_classes = 1
+    #n_classes = 1
 
     #Reduces the amount of classes
-    [X, Y] = reduceClassDimensions(X_raw, Y_raw, n_classes, n_data)
-    
+    #[X, Y] = reduceClassDimensions(X_raw, Y_raw, n_classes, n_data)
+    X = X_raw
+    Y = Y_raw
     #Split the dataset into training- and testset 
     #for the sample and label.
     breast_sample_train, breast_sample_test, breast_label_train, breast_label_test = train_test_split(
         X, Y, test_size=0.3, random_state=22)
     #Reduces the amount of attrubutes/features.
-    [breast_sample_train, breast_sample_test] = reduceAttributeDimensions(n_attributes, breast_sample_train, breast_sample_test)
+    #[breast_sample_train, breast_sample_test] = reduceAttributeDimensions(n_attributes, breast_sample_train, breast_sample_test)
 
     return breast_sample_train, breast_sample_test, breast_label_train, breast_label_test
 

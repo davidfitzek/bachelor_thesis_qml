@@ -31,7 +31,7 @@ dev = qml.device("default.qubit", wires = n_wires)
 def kernel_angle(x, y):
     """Kernel function with angle encoding. This circuit will rotate the 
         N-dimensional input data into N qubits. Input data can be floatnumbers."""
-    layers = 4
+    layers = 2
     for i in range(layers):
         AngleEmbedding(x, wires=range(n_wires))
     for i in range(layers):
@@ -59,7 +59,7 @@ def kernel_amplitude(x, y):
     """Kernel function with amplitude encoding. This circuit will encode the 
         N-dimensional input data into the amplitudes of log(N) qubits.
         Input data can be floatnumbers."""
-    layers = 2
+    layers = 1
     for i in range(layers):
         AmplitudeEmbedding(x, wires=range(n_wires), pad_with = 0, normalize=True)
     for i in range(layers):
@@ -133,8 +133,10 @@ def main():
     #load_data_iris(150)
     #load_data
 
-    [sample_train, sample_test, label_train, label_test] = load_data_breast(4 ,100)
+    [sample_train, sample_test, label_train, label_test] = load_data_breast(4, 500)
 
+    #[sample_train, sample_test, label_train, label_test] = load_data_iris(100)
+    #[sample_train, sample_test] = reduceAttributeDimensions(2, sample_train, sample_test)
     '''
     data = load_data_forest_oscar(500)
     
@@ -179,7 +181,7 @@ def main():
 
     #Calculate the SVM classically with the Quantum Kernel
     qsvm = SVC(kernel='precomputed')
-    print(qml.draw(kernel_angle)([1, 2, 3, 4], [3, 4, 5, 6], [1, 2, 3, 4], [3, 4, 5, 6]))
+    #print(qml.draw(kernel_angle)([1, 2, 3, 4], [3, 4, 5, 6], [1, 2, 3, 4], [3, 4, 5, 6]))
     if cross_fold<=1:
         #Calculates accuracy without cross validation
         qsvm.fit(matrix_train, label_train)
