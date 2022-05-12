@@ -9,8 +9,6 @@ import pennylane.optimize as opt
 import common as com
 import data as dat
 
-import matplotlib.pyplot as plt
-
 import time
 
 import csv

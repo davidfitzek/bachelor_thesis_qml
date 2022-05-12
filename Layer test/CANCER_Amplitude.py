@@ -195,7 +195,7 @@ def main():
     data_name = ["CANCER"]  # descriptive name
     data_array = [dat.load_data_cancer()]
 
-    file = "./CANCER/1Layer/"
+    file = "../CANCER/1Layer/"
 
     start_time = time.perf_counter()
 

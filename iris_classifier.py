@@ -1,7 +1,5 @@
 # iris_classifier.py
 
-import statistics
-
 import pennylane as qml
 from pennylane import numpy as np
 import pennylane.optimize as opt
