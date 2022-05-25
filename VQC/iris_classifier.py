@@ -45,13 +45,13 @@ def stateprep_Z(features):
 	wires = len(features)
 	for wire in range(wires):
 		qml.Hadamard(wire)
-	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Y')
+	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Z')
 
 def stateprep_ZZ(features):
 	wires = len(features)
 	for wire in range(wires):
 		qml.Hadamard(wire)
-	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Y')
+	qml.AngleEmbedding(features = features, wires = range(wires), rotation = 'Z')
 	for i in range(1, wires):
 		qml.CNOT(wires = [i - 1, i])
 		qml.RY((np.pi - features[i - 1]) * (np.pi - features[i]))
